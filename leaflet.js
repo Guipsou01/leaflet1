@@ -7,9 +7,9 @@ img.onload = function() {
     var width = img.width;
     var height = img.height;
 };
-document.write(img.height);
-document.write(img.width);
-document.write('-2-');
+//document.write(img.height);
+//document.write(img.width);
+//document.write('-2-');
 //image 1
 var imageUrl = 'https://maps.lib.utexas.edu/maps/historical/newark_nj_1922.jpg',
     imageBounds = [[0, 0], [0.1, 0.1]];
