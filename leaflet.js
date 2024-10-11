@@ -1,4 +1,4 @@
-document.write('-1-');
+//document.write('-1-');
 //
 var img = new Image();
 img.src = "https://media.tenor.com/ejmDdRGqKDUAAAAe/terminal-montage-donkey-kong.png";
