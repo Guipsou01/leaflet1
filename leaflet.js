@@ -1,5 +1,8 @@
+//
 var googleDocUrl = 'https://docs.google.com/spreadsheets/d/1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24/edit?gid=1381738855#gid=1381738855';
-
+//
+var googleApiKey = 'a';
+//
 document.write('-1-');
 //
 var img = new Image();
