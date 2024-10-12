@@ -28,6 +28,7 @@ async function corps(){
     //traitement donnees google
     for (const lignes of array) {
         if(lignes[0] === 'MARKER'){
+            console.log(lignes);
             (function(){
               var imgSize = new Image();
               var x = lignes[1];
@@ -44,8 +45,6 @@ async function corps(){
                 marker(x,y,lx,ly,imgSize.src,imgDesc);
               }
             }());
-
-
             //marker(lignes[1],lignes[2],38,95,lignes[3],lignes[4]);
           }
     }
@@ -73,7 +72,6 @@ async function corps(){
         map.addLayer(overlay);
     }
     function marker(x,y,lx,ly,iconUrl, description){
-        console.log("markeur !");
         var greenIcon = L.icon({
         iconUrl,
         //shadowUrl:    'https://cdn.pixilart.com/photos/large/d26d92d3649555f.png',
@@ -81,6 +79,12 @@ async function corps(){
         iconAnchor:   [lx / 2, ly / 2], // point of the icon which will correspond to marker's location, 22;94 pour la feuille
         popupAnchor:  [0, -ly / 2] // point from which the popup should open relative to the iconAnchor, -3;-76 pour la feuille
         });
-        L.marker([parseFloat(y), parseFloat(x)], {icon: greenIcon}).addTo(map).bindPopup(description);
+        L.marker([convertToFloat(y), convertToFloat(x)], {icon: greenIcon}).addTo(map).bindPopup(description);
+    };
+
+    function convertToFloat(nb){
+        nb = nb.replace(',','.');
+        console.log(nb);
+        return parseFloat(nb);
     };
 }
