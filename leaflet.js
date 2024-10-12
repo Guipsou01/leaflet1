@@ -1,8 +1,16 @@
-//
+//google
 var googleDocUrl = 'https://docs.google.com/spreadsheets/d/1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24/edit?gid=1381738855#gid=1381738855';
-//
 var googleApiKey = 'AIzaSyCTYinHSnmthpQKkNeRcNMnyk1a8lTyzaA';
 //
+const apiKey = 'AIzaSyCTYinHSnmthpQKkNeRcNMnyk1a8lTyzaA'; // Replace with your API key
+const spreadsheetId = 'AIzaSyCTYinHSnmthpQKkNeRcNMnyk1a8lTyzaA'; // Replace with your spreadsheet ID
+const sheetName = 'Credits'; // Replace with your sheet name
+
+fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`)
+  .then(response => response.json())
+  .then(data => console.log(data.values))
+  .catch(error => console.error('Error:', error));
+//general
 document.write('-1-');
 //
 var img = new Image();
