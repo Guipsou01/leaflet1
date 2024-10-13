@@ -3,6 +3,8 @@ const spreadsheetId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; // Replace
 const sheetName = 'Leaflet-MarioWorld'; // Replace with your sheet name
 var array = [];
 var tiles = null;
+var mouseLat = 0;
+var mouseLng = 0;
 
 async function corps(){
     //initialisation map leaflet
@@ -24,12 +26,6 @@ async function corps(){
         console.error("Error:", error);
     }
     //clique
-    map.on('click', function(e){
-        var coord = e.latlng;
-        var lat = coord.lat;
-        var lng = coord.lng;
-        console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
-    });
     //traitement donnees google
     for (const lignes of array) {
         if(lignes[0] === 'MARKER'){
@@ -99,6 +95,22 @@ async function corps(){
             }());
           }
     }
+    //souris
+    function updateText() {
+      const texte = document.getElementById('texteSuivant');
+      texte.innerHTML = `${mouseLng.toFixed(3)} : ${mouseLat.toFixed(3)}`;
+  }
+  
+    // Exécuter cette fonction chaque fois que la variable est mise à jour
+    map.on('mousemove', function(e) {
+      mouseLat = e.latlng.lat; // Récupère la latitude du curseur
+      mouseLng = e.latlng.lng; // Récupère la latitude du curseur
+      updateText(); // Met à jour le texte du div
+      const texte = document.getElementById('texteSuivant');
+      texte.style.left = e.originalEvent.pageX + 'px';
+      texte.style.top = e.originalEvent.pageY + 'px';
+  });
+    //
     if(tiles != null) tiles.addTo(map);
     //
     //
