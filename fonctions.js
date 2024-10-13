@@ -13,103 +13,86 @@ async function corps(){
     //requette et enregistrement donnees google 
     try {
         const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`)//fetch: récuperation de ressource depuis un serveur
-        if (!response.ok) {
-            throw new Error(`Response status: ${response.status}`);
-        }
-        //const result = await response.json();
-        //console.log("Success:", result);
-        //for (const letter of result) {
+        if (!response.ok) {throw new Error(`Response status: ${response.status}`);}
         const json = await response.json();
         array = json.values;
-        //} // "a" "b" "c" "d" "e"
-    } catch (error) {
-        console.error("Error:", error);
-    }
-    //clique
+    } catch (error) {console.error("Error:", error);}
     //traitement donnees google
     for (const lignes of array) {
-        if(lignes[0] === 'MARKER'){
-            console.log(lignes);
-            (function(){
-              var imgSize = new Image();
-              var x = lignes[1];
-              var y = lignes[2];
-              var lx = lignes[3];
-              var imgDesc = lignes[5];
-              var ly = 0;
-              imgSize.src = lignes[4];
-              imgSize.onload = function() {
-                //var width = imgSize.width;
-                //var height = imgSize.height;
-                //image(lignes[1],lignes[2],lignes[3],lignes[3],lignes[4]);
-                ly = imgSize.height / imgSize.width * lx;
-                marker(x,y,lx,ly,imgSize.src,imgDesc);
-              }
-            }());
-            //marker(lignes[1],lignes[2],38,95,lignes[3],lignes[4]);
-          }
-          else if(lignes[0] === 'TILEMAP-DEFAULT'){
-            tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                {
-                    maxZoom: 19,
-                    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            });
-          }
-          else if(lignes[0] === 'IMG-LX'){
-            (function(){
-              var imgSize = new Image();
-              var x = lignes[1];
-              var y = lignes[2];
-              var lx = lignes[3];
-              var ly = 0;
-              imgSize.src = lignes[4];
-              imgSize.onload = function() {
-                //var width = imgSize.width;
-                //var height = imgSize.height;
-                //image(lignes[1],lignes[2],lignes[3],lignes[3],lignes[4]);
-                ly = imgSize.height / imgSize.width * lx;
-                ly = ly;
-                image(x,y,x + lx,y + ly,imgSize.src);
-              }
-            }());
-          }
-          else if(lignes[0] === 'IMG-LX-CENTER'){
-            (function(){
-              var imgSize = new Image();
-              var x = convertToFloat(lignes[1]);
-              var y = convertToFloat(lignes[2]);
-              var lx = convertToFloat(lignes[3]);
-              var ly = convertToFloat(0);
-              imgSize.src = lignes[4];
-              imgSize.onload = function() {
-                //var width = imgSize.width;
-                //var height = imgSize.height;
-                //image(lignes[1],lignes[2],lignes[3],lignes[3],lignes[4]);
-                ly = imgSize.height / imgSize.width * lx;
-                console.log("x1: " + (x - lx / 2));
-                console.log("y1: " + (y - ly / 2));
-                console.log("x2: " + (x + lx / 2));
-                console.log("y2: " + (y + ly / 2));
-                image((x - lx/2),(y - ly / 2),(x + lx / 2),(y + ly / 2),imgSize.src);
-              }
-            }());
-          }
+      switch(lignes[0]){
+        case 'MARKER':
+          //console.log(lignes);
+          (function(){
+            var imgSize = new Image();
+            var x = lignes[1];
+            var y = lignes[2];
+            var lx = lignes[3];
+            var imgDesc = lignes[5];
+            var ly = 0;
+            imgSize.src = lignes[4];
+            imgSize.onload = function() {
+              ly = imgSize.height / imgSize.width * lx;
+              marker(x,y,lx,ly,imgSize.src,imgDesc);
+            }
+          }());
+        break;
+        case 'TILEMAP-DEFAULT':
+          tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          });
+        break;
+        case 'IMG-LX':
+          (function(){
+            var imgSize = new Image();
+            var x = lignes[1];
+            var y = lignes[2];
+            var lx = lignes[3];
+            var ly = 0;
+            imgSize.src = lignes[4];
+            imgSize.onload = function() {
+              ly = imgSize.height / imgSize.width * lx;
+              ly = ly;
+              image(x,y,x + lx,y + ly,imgSize.src);
+            }
+          }());
+        break;
+        case 'IMG-LX-CENTER':
+          (function(){
+            var imgSize = new Image();
+            var x = convertToFloat(lignes[1]);
+            var y = convertToFloat(lignes[2]);
+            var lx = convertToFloat(lignes[3]);
+            var ly = convertToFloat(0);
+            imgSize.src = lignes[4];
+            imgSize.onload = function() {
+              ly = imgSize.height / imgSize.width * lx;
+              console.log("x1: " + (x - lx / 2));
+              console.log("y1: " + (y - ly / 2));
+              console.log("x2: " + (x + lx / 2));
+              console.log("y2: " + (y + ly / 2));
+              image((x - lx/2),(y - ly / 2),(x + lx / 2),(y + ly / 2),imgSize.src);
+            }
+          }());
+        break;
+        default:
+        break;
+      }
     }
     //souris
-    function updateText() {
-      const texte = document.getElementById('texteSuivant');
-      texte.innerHTML = `${mouseLng.toFixed(3)} : ${mouseLat.toFixed(3)}`;
-  }
   
     // Exécuter cette fonction chaque fois que la variable est mise à jour
     map.on('mousemove', function(e) {
-      mouseLat = e.latlng.lat; // Récupère la latitude du curseur
-      mouseLng = e.latlng.lng; // Récupère la latitude du curseur
-      updateText(); // Met à jour le texte du div
+      mouseLat = e.latlng.lat; // valeur du textue
+      mouseLng = e.latlng.lng; 
+      //maj du texte
       const texte = document.getElementById('texteSuivant');
-      texte.style.left = e.originalEvent.pageX + 'px';
+      texte.innerHTML = `${mouseLng.toFixed(3)} : ${mouseLat.toFixed(3)}`;
+      //
+      texte.style.left = e.originalEvent.pageX + 'px';//position du texte
       texte.style.top = e.originalEvent.pageY + 'px';
-  });
+    });
     //
     if(tiles != null) tiles.addTo(map);
     //
