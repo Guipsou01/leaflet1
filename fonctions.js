@@ -1,6 +1,8 @@
 const apiKey = 'AIzaSyCTYinHSnmthpQKkNeRcNMnyk1a8lTyzaA'; // Replace with your API key
-const spreadsheetId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; // Replace with your spreadsheet ID
-const sheetName = 'Leaflet-MarioWorld'; // Replace with your sheet name
+//const spreadsheetId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; // Replace with your spreadsheet ID
+const spreadsheetId = '1ZAvRc7k-sphLJzj01WYmweG17yX49qNy542Kzkr01So'; // Replace with your spreadsheet ID
+//const sheetName = 'Leaflet-MarioWorld'; // Replace with your sheet name
+const sheetName = 'MAP'; // Replace with your sheet name
 var array = [];
 var tiles = null;
 var mouseLat = 0;
