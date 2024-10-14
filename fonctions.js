@@ -76,6 +76,54 @@ async function corps(){
             }
           }());
         break;
+        case 'IMG-PLR':
+          //
+          var x1 = lignes[1];
+          var y1 = lignes[2];
+          var lx = lignes[3];
+          var ly = lignes[4];
+          var angle = lignes[5];
+          //
+          //
+          var x2modif = lx * Math.cos(degToRad(angle));
+          var y2modif = lx * Math.sin(degToRad(angle));
+          var x3modif = ly * Math.cos(degToRad(angle + 90));
+          var y3modif = ly * Math.sin(degToRad(angle + 90));
+          //
+          marker(x1,y1,10,10,"origine","https://leafletjs.com/examples/custom-icons/leaf-green.png");
+          image3p(x1 + x3modif + x2modif,y1 + y3modif + y2modif,x1 + x3modif,y1 + y3modif,x1 + x2modif,y1 + y2modif,"https://media.tenor.com/ejmDdRGqKDUAAAAe/terminal-montage-donkey-kong.png");
+          //
+        break;
+        case 'IMG-LX-CENTER-R':
+          (function(){
+            var imgSize = new Image();
+            var x1 = convertToFloat(lignes[1]);
+            var y1 = convertToFloat(lignes[2]);
+            var lx = convertToFloat(lignes[3]);
+            var angle = convertToFloat(lignes[4]);
+            var ly = convertToFloat(0);
+            imgSize.src = lignes[5];
+            imgSize.onload = function() {
+              ly = imgSize.height / imgSize.width * lx;
+              //image((x - lx/2),(y - ly / 2),(x + lx / 2),(y + ly / 2),imgSize.src);
+              var x2modif = lx * Math.cos(degToRad(angle));
+              var y2modif = lx * Math.sin(degToRad(angle));
+              var x3modif = ly * Math.cos(degToRad(angle + 90));
+              var y3modif = ly * Math.sin(degToRad(angle + 90));
+              var x2P = x1 + x3modif + x2modif;
+              var y2P = y1 + y3modif + y2modif;
+              var x3P = x1 + x3modif;
+              var y3P = y1 + y3modif;
+              var x4P = x1 + x2modif;
+              var y4P = y1 + y2modif;
+              image3p(x3P + average(x1,x2P,x3P,x4P) - x2P ,y3P + average(y1,y2P,y3P,y4P) - y2P,x2P + average(x1,x2P,x3P,x4P) - x2P,y2P + average(y1,y2P,y3P,y4P) - y2P,x1 + average(x1,x2P,x3P,x4P) - x2P,y1 + average(y1,y2P,y3P,y4P) - y2P,imgSize.src);
+              //marker(x2P + average(x1,x2P,x3P,x4P) - x2P,y2P + average(y1,y2P,y3P,y4P) - y2P,10,10,"origine","https://leafletjs.com/examples/custom-icons/leaf-green.png");
+              //marker(x3P + average(x1,x2P,x3P,x4P) - x2P,y3P + average(y1,y2P,y3P,y4P) - y2P,10,10,"origine","https://leafletjs.com/examples/custom-icons/leaf-green.png");
+              //marker(x4P + average(x1,x2P,x3P,x4P) - x2P,y4P + average(y1,y2P,y3P,y4P) - y2P,10,10,"origine","https://leafletjs.com/examples/custom-icons/leaf-green.png");
+              //marker(x1 + average(x1,x2P,x3P,x4P) - x2P,y1 + average(y1,y2P,y3P,y4P) - y2P,10,10,"origine","https://leafletjs.com/examples/custom-icons/leaf-green.png");
+            }
+          }());
+        break;
         default:
         break;
       }
@@ -117,17 +165,17 @@ async function corps(){
         L.imageOverlay(imageUrl, imageBounds3).addTo(map);
     }
     function image3p(x1,y1,x2,y2,x3,y3,imageUrl){
-        var point1 = L.latLng(y1, x1),
-        point2 = L.latLng(y2, x2),
-        point3 = L.latLng(y3, x3);
-        var	bounds = new L.LatLngBounds(point1, point2).extend(point3);
-        map.fitBounds(bounds);
-        var overlay = L.imageOverlay.rotated(imageUrl, point1, point2, point3, { 
-          opacity: 1,
-          interactive: true,
-          attribution: "Historical building plan &copy; <a href='http://www.ign.es'>Instituto Geográfico Nacional de España</a>"
-        });
-        map.addLayer(overlay);
+      var point1 = L.latLng(convertToFloat(y1), convertToFloat(x1)),
+      point2 = L.latLng(convertToFloat(y2), convertToFloat(x2)),
+      point3 = L.latLng(convertToFloat(y3), convertToFloat(x3));
+      var	bounds = new L.LatLngBounds(point1, point2).extend(point3);
+      map.fitBounds(bounds);
+      var overlay = L.imageOverlay.rotated(imageUrl, point1, point2, point3, { 
+        opacity: 1,
+        interactive: true,
+        attribution: "Historical building plan &copy; <a href='http://www.ign.es'>Instituto Geográfico Nacional de España</a>"
+      });
+      map.addLayer(overlay);
     }
     function marker(x,y,lx,ly,iconUrl, description){
         var greenIcon = L.icon({
@@ -138,5 +186,8 @@ async function corps(){
         popupAnchor:  [0, -ly / 2] // point from which the popup should open relative to the iconAnchor, -3;-76 pour la feuille
         });
         L.marker([convertToFloat(y), convertToFloat(x)], {icon: greenIcon}).addTo(map).bindPopup(description);
+    }
+    function average(a, b, c, d){
+      return ((a + b + c + d) / 4);
     };
 }
