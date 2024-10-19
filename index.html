@@ -20,21 +20,21 @@
         max-width: 100%;
         max-height: 100%;
     }
-    #texteSuivant {
-        position: absolute;
-        font-size: 20px;
-        font-weight: bold;
-        pointer-events: none; /* Le texte ne doit pas interférer avec le curseur */
-        color: white;
-    }
+    .leaflet-popup-content {
+            word-wrap: break-word;
+            white-space: normal;
+            max-width: 200px; /* Ajustez selon vos besoins */
+        }
 </style>
-<script type="text/javascript" src="fonctions.js"></script>
 </head>
 <script>
 </script>
 <body>
     <div id="map" style="width: 1800px; height: 1200px;"></div>
-    <div id="texteSuivant" style="position:absolute; font-size:20px; font-weight:bold; pointer-events:none; color:red; z-index:1000;">Je te suis !</div>
+    <div id="texteSuivant" style="position:absolute; font: size 5px; font-weight:bold; pointer-events:none; z-index:1000;">Je te suis !</div>
+    <script src="leaflet.js"></script>
+    <script src="mushroomSelector.js"></script>
+    <script src="fonctions.js"></script>
     <script type="module">
         corps();
     </script>
