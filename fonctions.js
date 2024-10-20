@@ -128,7 +128,7 @@ async function corps(){
           }
           imgSize.onerror = function() {
             //console.log("L'image n'a pas pu être chargée. L'URL ne semble pas contenir une image valide.");
-            marker(x1,y1,100,100,"https://mario.wiki.gallery/images/8/8b/SuperMushroom_-_2D_art.svg","L'image n'est pas reconnue, vérifiez l'URL");
+            marker(x1,y1,10,10,unfound_img,"L'image n'est pas reconnue, vérifiez l'URL");
           }
         }());
       break;
