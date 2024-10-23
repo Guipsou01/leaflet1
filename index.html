@@ -73,6 +73,21 @@
     .croixModalId:hover {
         color: black;
     }
+    #btnEditor {
+        position: absolute;
+        top: 20px;
+        right: 120px;
+        z-index: 1000;
+        padding: 10px 20px;
+        background-color: #ff0000;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    #btnEditor:hover {
+        background-color: #ff7373;
+    }
 </style>
 </head>
 <script>
@@ -101,31 +116,12 @@
         </div>
     </div>
     <button id="btnModalId">Credits</button>
+    <button id="btnEditor"><div id="btnEditorContent"></div></button>
     <script src="leaflet.js"></script>
     <script src="mushroomSelector.js"></script>
     <script src="fonctions.js"></script>
     <script type="module">
         corps();
-        var fenetreModale = document.getElementById("fenetreModaleId");
-        var btnModal = document.getElementById("btnModalId");
-        var croixModal = document.getElementsByClassName("croixModalId")[0];
-        var lienObj = document.getElementById("lienDynamique");
-        var lienTxt = "https://docs.google.com/spreadsheets/d/" + spreadsheetId;
-        lienObj.href = lienTxt; // Assigner le lien à l'attribut href
-        lienObj.textContent = lienTxt; // Mettre à jour le texte affiché pour correspondre au lien
-        //fenetre modale
-        btnModal.onclick = function() {
-            fenetreModale.style.display = "block";
-            contenuModale.textContent = texteDynamique;
-        }
-        croixModal.onclick = function() {
-            fenetreModale.style.display = "none";
-        }
-        window.onclick = function(event) {
-            if (event.target == fenetreModale) {
-                fenetreModale.style.display = "none";
-            }
-        }
     </script>
 </body>
 </html>
