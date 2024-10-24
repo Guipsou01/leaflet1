@@ -87,21 +87,21 @@ async function traitementLigne(lignes){
           var lx = convertToFloat(lignes[3]);
           var ly = convertToFloat(0);
           imagePtee.src = lignes[6];
-          console.log(lignes[7]);
+          //console.log(lignes[7]);
           imagePtee.onload = async function() {
             ly = imagePtee.height / imagePtee.width * lx;
             //[x - lx / 2,y - ly / 2,x + lx / 2,y - ly / 2,x + lx / 2,y + ly / 2,x - lx / 2,y + ly / 2,x,y]
             //[x - lx / 2,y + ly / 2,x + lx / 2,y + ly / 2,x + lx / 2,y - ly / 2,x - lx / 2,y - ly / 2,x,y]
-            //p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y,pRefx,pRefy,title,author,website
+            //p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y,pRefx,pRefy,title,author,website,imageSizeX,imageSizeY,imageLx,imageLy
             //BG,BD,HD,HG
-            await image(imagePtee.src, [x1 - lx/2,y1 - ly/2,x1 + lx/2,y1 - ly/2,x1 + lx / 2,y1 + ly / 2,x1 - lx/2,y1 + ly/2,x1,y1,lignes[7],lignes[8],lignes[9], imagePtee.width, imagePtee.height]);
+            await image(imagePtee.src, [x1 - lx/2,y1 - ly/2,x1 + lx/2,y1 - ly/2,x1 + lx / 2,y1 + ly / 2,x1 - lx/2,y1 + ly/2,x1,y1,lignes[7],lignes[8],lignes[9], imagePtee.width, imagePtee.height, lx, ly]);
             retour = imagePtee;
             //console.log("retour ok");
             resolve();
           };
           imagePtee.onerror = function() {
             // Si l'image n'est pas valide
-            console.log(lignes[7] + " AAAA");
+            //console.log(lignes[7] + " AAAA");
             marker(x1,y1,10,10,unfound_img,"Image " + lignes[7] + " not found, check URL");
             resolve();
           };
@@ -159,8 +159,8 @@ async function traitementLigne(lignes){
             var y3F = y3P - (average(y1,y2P,y3P,y4P) - y1);
             var x4F = x4P - (average(x1,x2P,x3P,x4P) - x1);
             var y4F = y4P - (average(y1,y2P,y3P,y4P) - y1);
-            //p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y,pRefx,pRefy,title,author,website
-            await image3p(imagePtee.src, [x1F,y1F,x2F,y2F,x3F,y3F,x4F,y4F,x1,y1,lignes[7],lignes[8],lignes[9], imagePtee.width, imagePtee.height]);
+            //p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y,pRefx,pRefy,title,author,website,imageSizeX,imageSizeY,imageLx,imageLy
+            await image3p(imagePtee.src, [x1F,y1F,x2F,y2F,x3F,y3F,x4F,y4F,x1,y1,lignes[7],lignes[8],lignes[9], imagePtee.width, imagePtee.height, lx, ly, angle]);
             //console.log("retour ok");
             resolve();
           }
