@@ -34,7 +34,7 @@ const goldenShroom = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/
         isHolding2 = true;
       });
       if(isHolding2 == true){
-        console.log("Appui champignon");
+        //console.log("Appui champignon");
         //imageFocus.setCorners(newCorner1, newCorner2, newCorner3);
         changePosImage3P(mouseLng,mouseLat,imageFocus);
         map.dragging.disable();
@@ -85,7 +85,10 @@ const goldenShroom = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/
       //console.log("ok pour " + imageFocus.options.data[8] + ":" + imageFocus.options.data[9] + "?");
       var points = imageFocus.options.data;
       changeSelectorPos(points[8],points[9],points[0],points[1],points[2],points[3],points[4],points[5],points[6],points[7]);
-      popup(convertToFloat(points[8]),convertToFloat(points[5]),"<h3>" + points[10] + "</h3><br>Author:  " + points[11] + "<br><br>Website link:<br><a href=" + points[12] + ">" + points[12] + "</a><br><br> GPS position: " + convertToFloat(points[8]).toFixed(1) + ":" + convertToFloat(points[9]).toFixed(1) + "<br>Image size: " + convertToFloat(points[13]) + ":" + convertToFloat(points[14]));
+      if(imageFocus.options.angle){
+        popup(convertToFloat(points[8]),convertToFloat(points[5]),"<h3>" + points[10] + "</h3><br>Author:  " + points[11] + "<br><br>Website link:<br><a href=" + points[12] + ">" + points[12] + "</a><br><br> GPS position: " + convertToFloat(points[8]).toFixed(1) + ":" + convertToFloat(points[9]).toFixed(1) + "<br>Image size: " + convertToFloat(points[13]) + ":" + convertToFloat(points[14]) + "<br>Image scale:" + convertToFloat(points[15]).toFixed(3) + ":" + convertToFloat(points[16]).toFixed(3) + "<br>Angle: " + points[17]);
+      }
+      else popup(convertToFloat(points[8]),convertToFloat(points[5]),"<h3>" + points[10] + "</h3><br>Author:  " + points[11] + "<br><br>Website link:<br><a href=" + points[12] + ">" + points[12] + "</a><br><br> GPS position: " + convertToFloat(points[8]).toFixed(1) + ":" + convertToFloat(points[9]).toFixed(1) + "<br>Image size: " + convertToFloat(points[13]) + ":" + convertToFloat(points[14]) + "<br>Image scale:" + convertToFloat(points[15]).toFixed(3) + ":" + convertToFloat(points[16]).toFixed(3));
     }
   }
   function changeSelectorPos(px,py,x1,y1,x2,y2,x3,y3,x4,y4){
