@@ -16,11 +16,11 @@ const goldenShroom = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/
 //var imageFocus;
 
   async function initSelector(){
-    selector1 = markerStatic(0,0,10,10,shroom);
-    selector2 = markerStatic(0,0,10,10,shroom);
-    selector3 = markerStatic(0,0,10,10,shroom);
-    selector4 = markerStatic(0,0,10,10,shroom);
-    selector5 = markerStatic(0,0,10,10,shroom);
+    selector1 = markerStatic(0,0,10,10,shroom);//PR
+    selector2 = markerStatic(0,0,10,10,shroom);//BG
+    selector3 = markerStatic(0,0,10,10,shroom);//BD
+    selector4 = markerStatic(0,0,10,10,shroom);//HD
+    selector5 = markerStatic(0,0,10,10,shroom);//HG
     selector1Edit = markerStatic(0,0,15,15,goldenShroom);
     selector2Edit = markerStatic(0,0,15,15,goldenShroom);
     selector3Edit = markerStatic(0,0,15,15,goldenShroom);
@@ -85,7 +85,7 @@ const goldenShroom = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/
       //console.log("ok pour " + imageFocus.options.data[8] + ":" + imageFocus.options.data[9] + "?");
       var points = imageFocus.options.data;
       changeSelectorPos(points[8],points[9],points[0],points[1],points[2],points[3],points[4],points[5],points[6],points[7]);
-      popup(convertToFloat(points[3]),convertToFloat(points[8]),"<h3>" + points[10] + "</h3><br>Author:  " + points[11] + "<br><br>Website link:<br><a href=" + points[12] + ">" + points[12] + "</a><br><br> GPS position: " + convertToFloat(points[8]).toFixed(1) + ":" + convertToFloat(points[9]).toFixed(1) + "<br>Image size: " + convertToFloat(points[13]) + ":" + convertToFloat(points[14]));
+      popup(convertToFloat(points[8]),convertToFloat(points[5]),"<h3>" + points[10] + "</h3><br>Author:  " + points[11] + "<br><br>Website link:<br><a href=" + points[12] + ">" + points[12] + "</a><br><br> GPS position: " + convertToFloat(points[8]).toFixed(1) + ":" + convertToFloat(points[9]).toFixed(1) + "<br>Image size: " + convertToFloat(points[13]) + ":" + convertToFloat(points[14]));
     }
   }
   function changeSelectorPos(px,py,x1,y1,x2,y2,x3,y3,x4,y4){
@@ -105,9 +105,9 @@ const goldenShroom = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/
     return (pointDansTriangle(px, py, x1, y1, x2, y2, x3, y3) || pointDansTriangle(px, py, x1, y1, x3, y3, x4, y4));
   }
   function pointDansTriangle(px, py, x1, y1, x2, y2, x3, y3){
-		  if(dot(true, px, py, x1, y1, x2, y2)
-      && dot(true, px, py, x2, y2, x3, y3)
-      && dot(true, px, py, x3, y3, x1, y1)) return true;
+		  if(dot(false, px, py, x1, y1, x2, y2)
+      && dot(false, px, py, x2, y2, x3, y3)
+      && dot(false, px, py, x3, y3, x1, y1)) return true;
       return false;
   }
   function dot(gauche, px, py, x1, y1, x2, y2){
