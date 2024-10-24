@@ -31,9 +31,9 @@ function markerStatic(x,y,lx,ly,iconUrl){
 async function image3p(imageUrl, dataa){
   return new Promise((resolve, reject) => {
     //console.log("insertion image "+dataa[10]+"...");
-    var point1 = L.latLng(convertToFloat(dataa[3]), convertToFloat(dataa[2])),
-    point2 = L.latLng(convertToFloat(dataa[5]), convertToFloat(dataa[4])),
-    point3 = L.latLng(convertToFloat(dataa[1]), convertToFloat(dataa[0]));
+    var point1 = L.latLng(convertToFloat(dataa[5]), convertToFloat(dataa[4])),
+    point2 = L.latLng(convertToFloat(dataa[7]), convertToFloat(dataa[6])),
+    point3 = L.latLng(convertToFloat(dataa[3]), convertToFloat(dataa[2]));
     //var	bounds = new L.LatLngBounds(point1, point2).extend(point3);
     //map.fitBounds(bounds);
     imageEvent = L.imageOverlay.rotated(imageUrl, point1, point2, point3, { 
@@ -59,8 +59,8 @@ async function image(imageUrl, dataa){
     //console.log("insertion image "+dataa[10]+"...");
     x1 = convertToFloat(dataa[0]);
     y1 = convertToFloat(dataa[1]);
-    x2 = convertToFloat(dataa[2]);
-    y2 = convertToFloat(dataa[3]);
+    x2 = convertToFloat(dataa[4]);
+    y2 = convertToFloat(dataa[5]);
     var imageBounds3 = [[y1, x1], [y2, x2]];
     imageEvent = L.imageOverlay(imageUrl, imageBounds3, {
       interactive: true,
@@ -168,7 +168,7 @@ function convertToFloat(nb){
 
 function popup(x, y, content){
   popupSelect = L.popup()
-  .setLatLng(L.latLng(x,y))  // Positionner le pop-up à l'endroit du clic
+  .setLatLng(L.latLng(y,x))  // Positionner le pop-up à l'endroit du clic
   .setContent(content)  // Contenu du pop-up
   .openOn(map);  // Ouvrir le pop-up sur la carte
 }
