@@ -93,7 +93,8 @@ async function traitementLigne(lignes){
             //[x - lx / 2,y - ly / 2,x + lx / 2,y - ly / 2,x + lx / 2,y + ly / 2,x - lx / 2,y + ly / 2,x,y]
             //[x - lx / 2,y + ly / 2,x + lx / 2,y + ly / 2,x + lx / 2,y - ly / 2,x - lx / 2,y - ly / 2,x,y]
             //p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y,pRefx,pRefy,title,author,website
-            await image(imagePtee.src, [x1 - lx/2,y1 - ly/2,x1 + lx/2,y1 + ly/2,x1 + lx / 2,y1 - ly / 2,x1 - lx/2,y1 + ly/2,x1,y1,lignes[7],lignes[8],lignes[9], imagePtee.width, imagePtee.height]);
+            //BG,BD,HD,HG
+            await image(imagePtee.src, [x1 - lx/2,y1 - ly/2,x1 + lx/2,y1 - ly/2,x1 + lx / 2,y1 + ly / 2,x1 - lx/2,y1 + ly/2,x1,y1,lignes[7],lignes[8],lignes[9], imagePtee.width, imagePtee.height]);
             retour = imagePtee;
             //console.log("retour ok");
             resolve();
@@ -127,36 +128,37 @@ async function traitementLigne(lignes){
         (function(){
           imagePtee = new Image();
           var x1 = convertToFloat(lignes[1]);
-          var y1 = convertToFloat(lignes[2]);
+          var y1 = convertToFloat(lignes[2]);//execute en tant que coin BG
           var lx = convertToFloat(lignes[3]);
           var angle = convertToFloat(lignes[4]);
           //console.trace("angle: " + angle + " " + lignes[7])
           var ly = convertToFloat(0);
           imagePtee.src = lignes[6];
           imagePtee.onload = async function() {
+            //angle = 0;
             ly = imagePtee.height / imagePtee.width * lx;
             //image((x - lx/2),(y - ly / 2),(x + lx / 2),(y + ly / 2),imgSize.src);
-            //calcul des nouvelles positions des trois coins depuis la valeur d'angle
-            var x2modif = lx * Math.cos(degToRad(angle));
-            var y2modif = lx * Math.sin(degToRad(angle));
-            var x3modif = ly * Math.cos(degToRad(angle + 90));
-            var y3modif = ly * Math.sin(degToRad(angle + 90));
+            //calcul des nouvelles positions des trois coins BD, HD, HG depuis la valeur d'angle
+            var posAx = lx * Math.cos(degToRad(angle));
+            var posAy = lx * Math.sin(degToRad(angle));
+            var posBx = ly * Math.cos(degToRad(angle + 90));
+            var posBy = ly * Math.sin(degToRad(angle + 90));
             //application des nouvelles positions (seul x1 et y1 ne bouge pas)
-            var x2P = x1 + x3modif + x2modif;
-            var y2P = y1 + y3modif + y2modif;
-            var x3P = x1 + x3modif;
-            var y3P = y1 + y3modif;
-            var x4P = x1 + x2modif;
-            var y4P = y1 + y2modif;
+            var x2P = x1 + posAx;
+            var y2P = y1 + posAy;
+            var x3P = x1 + posAx + posBx;
+            var y3P = y1 + posAy + posBy;
+            var x4P = x1 + posBx;
+            var y4P = y1 + posBy;
             //modification de l'image par rapport au mode de placement de point de base
-            var x1F = x1 + average(x1,x2P,x3P,x4P) - x2P;
-            var y1F = y1 + average(y1,y2P,y3P,y4P) - y2P;
-            var x2F = x3P + average(x1,x2P,x3P,x4P) - x2P;
-            var y2F = y3P + average(y1,y2P,y3P,y4P) - y2P;
-            var x3F = x2P + average(x1,x2P,x3P,x4P) - x2P;
-            var y3F = y2P + average(y1,y2P,y3P,y4P) - y2P;
-            var x4F = x4P + average(x1,x2P,x3P,x4P) - x2P;
-            var y4F = y4P + average(y1,y2P,y3P,y4P) - y2P;
+            var x1F = x1 - (average(x1,x2P,x3P,x4P) - x1);
+            var y1F = y1 - (average(y1,y2P,y3P,y4P) - y1);
+            var x2F = x2P - (average(x1,x2P,x3P,x4P) - x1);
+            var y2F = y2P - (average(y1,y2P,y3P,y4P) - y1);
+            var x3F = x3P - (average(x1,x2P,x3P,x4P) - x1);
+            var y3F = y3P - (average(y1,y2P,y3P,y4P) - y1);
+            var x4F = x4P - (average(x1,x2P,x3P,x4P) - x1);
+            var y4F = y4P - (average(y1,y2P,y3P,y4P) - y1);
             //p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y,pRefx,pRefy,title,author,website
             await image3p(imagePtee.src, [x1F,y1F,x2F,y2F,x3F,y3F,x4F,y4F,x1,y1,lignes[7],lignes[8],lignes[9], imagePtee.width, imagePtee.height]);
             //console.log("retour ok");
