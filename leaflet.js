@@ -40,6 +40,7 @@ async function image3p(imageUrl, dataa){
       opacity: 1,
       interactive: true,
       data: dataa,
+      angle: dataa[17],
     });
     imageEvent.on('load', function() {
       resolve();
@@ -84,7 +85,7 @@ function changePosImage3P(x1,y1,imageOverlay){
   var points = imageFocus.options.data;
   var moveX = mouseLng - points[8];
   var moveY = mouseLat - points[9];
-  console.log("move!");
+  //console.log("move!");
   imageFocus.options.data[0] = points[0] + moveX;
   var px1 = imageFocus.options.data[0];
   imageFocus.options.data[1] = points[1] + moveY;
