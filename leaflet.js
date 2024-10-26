@@ -124,8 +124,6 @@ function insertTile(){
       maxZoom: 19,
       attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
-}
-function tileTrace(){
   if(tiles != null) tiles.addTo(map);
 }
 map.on('click', function(e) {
