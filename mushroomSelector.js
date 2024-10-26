@@ -28,6 +28,11 @@ const goldenShroom = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/
     selector5Edit = markerStatic(0,0,15,15,goldenShroom);
     resetMarkers();
   }
+  function deleteAllContent(){
+    map.eachLayer(function(layer) {
+      map.removeLayer(layer);
+    });
+  }
   function mushroomSelectorMouseHold(){
     if(selector1Edit != null){
       selector1Edit.on('mousedown', function(e) {
