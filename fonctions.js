@@ -1,10 +1,8 @@
 //const spreadsheetId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; // Replace with your spreadsheet ID
-//const sheetName = 'Leaflet-MarioWorld'; // Replace with your sheet name
+var sheetNameFocus; // Replace with your sheet name
 const apiKey = 'AIzaSyCTYinHSnmthpQKkNeRcNMnyk1a8lTyzaA'; // Replace with your API key
 const spreadsheetId = '1ZAvRc7k-sphLJzj01WYmweG17yX49qNy542Kzkr01So'; // Replace with your spreadsheet ID
-const sheetName = 'MAP'; // Replace with your sheet name
 const unfound_img = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4fqKc0vxzBaLA0Vy9Edx9TIKzaCHxt_vHhImlsbNBeKkpZdu_nfYCLivgQSSOut8jB9c&usqp=CAU';
-var array = [];
 var mouseLat = 0;
 var mouseLng = 0;
 var rgImgSelect = 0;
@@ -17,26 +15,40 @@ var lienObj = document.getElementById("lienDynamique");
 var lienTxt = "https://docs.google.com/spreadsheets/d/" + spreadsheetId;
 var btnEditor = document.getElementById("btnEditor");
 var btnEditorContent = document.getElementById("btnEditorContent");
+var btnMaps = document.getElementById('btnMaps');
+var btnMapsList = document.getElementById('btnMapsList');
+var sheetNames = [];
 
 async function corps(){
   initSelector();
-  tileTrace();
   //initialisation map leaflet
   //requette et enregistrement donnees google 
   lienObj.href = lienTxt; // Assigner le lien à l'attribut href
   lienObj.textContent = lienTxt; // Mettre à jour le texte affiché pour correspondre au lien
   btnEditorContent.textContent = "Editor (off)";
-  try {
-      const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`)//fetch: récuperation de ressource depuis un serveur
-      if (!response.ok) {throw new Error(`Response status: ${response.status}`);}
-      const json = await response.json();
-      array = json.values;
-  } catch (error) {console.error("Error:", error);}
+  btnMaps.textContent = "Loading...";
+  //recuperation du nom des feuilles du tableau
+  await getNomFeuilles();
   //traitement donnees google
-  for (const lignes of array) {
-    //console.log("array " + array.length + "traitement ligne: " + lignes);
+  resetAllMapContent();
+}
+async function resetAllMapContent(){
+  //desactivation bouton reset
+  btnMaps.disabled = true;
+  //récupération des données de la feuille google visée
+  try{
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetNameFocus}?key=${apiKey}`)//fetch: récuperation de ressource depuis un serveur
+    if (!response.ok) {throw new Error(`Response status: ${response.status}, ${sheetNameFocus}`);}
+    const json = await response.json();
+    var donneesLeafletUnOnglet = json.values;
+  } catch (error) {console.error("Error:", error);}
+  deleteAllContent();
+  //traitement donnees google
+  for (const lignes of donneesLeafletUnOnglet) {
     await traitementLigne(lignes);
   }
+  //activation bouton reset
+  btnMaps.disabled = false;
 }
 async function traitementLigne(lignes){
   return new Promise((resolve, reject) => {
@@ -56,13 +68,14 @@ async function traitementLigne(lignes){
           imagePtee.src = lignes[4];
           imagePtee.onload = function() {
             ly = imagePtee.height / imagePtee.width * lx;
-            leaflet.marker(x,y,lx,ly,imagePtee.src,imgDesc);
+            marker(x,y,lx,ly,imagePtee.src,imgDesc);
           }
         }());
         resolve();
       break;
       case 'TILEMAP-DEFAULT':
         insertTile();
+        resolve();
       break;
       case 'IMG-LX':
         (function(){
@@ -210,4 +223,50 @@ btnEditor.onclick = function() {
     updateSelector();
     btnEditorContent.textContent = "Editor (on)";
   }
+}
+
+async function getNomFeuilles() {
+  //capturer le document google
+  try {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?key=${apiKey}`);
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+    const donneesGoogle = await response.json();
+    sheetNames = donneesGoogle.sheets.map(sheet => sheet.properties.title).filter(item => item.startsWith("Leaflet-"));
+    if(sheetNames.length === 0) sheetNames[0] = "Google sheets tab is missing";
+    sheetNameFocus = sheetNames[0];
+    createSelector();
+  } catch (erreur) {
+    console.error("Erreur dans le chargement google sheets:", erreur);
+    throw erreur;
+  }
+}
+
+function createSelector(){
+  btnMapsList.innerHTML = '';
+
+  btnMaps.textContent = sheetNameFocus;
+  sheetNames.forEach(option => {
+    const link = document.createElement('a');
+    link.href = "#";
+    link.textContent = option;
+    link.onclick = function(event) {
+      event.preventDefault(); // Empêche le comportement par défaut du lien
+      btnMaps.textContent = option; // Mettre à jour le texte du bouton
+      btnMapsList.style.display = 'none'; // Masquer la liste après sélection
+      sheetNameFocus = option;
+      resetAllMapContent();
+    };
+    btnMapsList.appendChild(link); // Ajouter le lien à la liste
+  });
+  btnMaps.onclick = function() {
+    btnMapsList.style.display = btnMapsList.style.display === 'none' ? 'block' : 'none';
+  };
+  // Fermer la liste déroulante quand on clique en dehors
+  window.onclick = function(event) {
+    if (!event.target.matches('#btnMaps')) {
+      btnMapsList.style.display = 'none';
+    }
+  };
 }
