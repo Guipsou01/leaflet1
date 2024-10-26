@@ -35,6 +35,7 @@
         color: white;
         border: none;
         border-radius: 5px;
+        font-size: 14px;
         cursor: pointer;
     }
     #btnModalId:hover {
@@ -83,9 +84,56 @@
         color: white;
         border: none;
         border-radius: 5px;
+        font-size: 14px;
         cursor: pointer;
     }
     #btnEditor:hover {
+        background-color: #ff7373;
+    }
+    #btnMaps {
+        background: none;
+        border: none;
+        font-size: 14px;
+        border-radius: 5px;
+        text-align: center;
+        background-color: #ff0000;
+        color: white;
+        padding: 10px 20px;
+        cursor: pointer;
+        min-width: 160px;
+    }
+
+    #btnMaps:hover {
+        background-color: #ff7373;
+    }
+
+    .btnMaps-container {
+        position: absolute;
+        top: 20px;
+        left: 80px;
+        z-index: 1000;
+        display: inline-block;
+    }
+    #btnMaps:disabled {
+        background-color: #ff7373;
+    }
+
+    #btnMapsList {
+        display: none;
+    }
+
+    #btnMapsList a {
+        font-size: 14px;
+        text-align: center;
+        background-color: #ffc3c3;
+        color: white;
+        padding: 6px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: block;
+    }
+
+    #btnMapsList a:hover {
         background-color: #ff7373;
     }
 </style>
@@ -114,6 +162,10 @@
             <b>All map makers!:</b><br>
             Credits for each Map by clicking on it.</p>
         </div>
+    </div>
+    <div class="btnMaps-container">
+        <button id="btnMaps"><div id="btnMapsContent"></button>
+        <div id="btnMapsList" class="btnMaps-list"></div>
     </div>
     <button id="btnModalId">Credits</button>
     <button id="btnEditor"><div id="btnEditorContent"></div></button>
