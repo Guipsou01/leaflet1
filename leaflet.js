@@ -33,10 +33,11 @@ async function image3p(imageUrl, dataa){
     //console.log("insertion image "+dataa[10]+"...");
     var point1 = L.latLng(convertToFloat(dataa[5]), convertToFloat(dataa[4])),
     point2 = L.latLng(convertToFloat(dataa[7]), convertToFloat(dataa[6])),
-    point3 = L.latLng(convertToFloat(dataa[3]), convertToFloat(dataa[2]));
+    //point3 = L.latLng(convertToFloat(dataa[3]), convertToFloat(dataa[2])),
+    point4 = L.latLng(convertToFloat(dataa[1]), convertToFloat(dataa[0]));
     //var	bounds = new L.LatLngBounds(point1, point2).extend(point3);
     //map.fitBounds(bounds);
-    imageEvent = L.imageOverlay.rotated(imageUrl, point1, point2, point3, { 
+    imageEvent = L.imageOverlay.rotated(imageUrl, point2, point1, point4, { 
       opacity: 1,
       interactive: true,
       data: dataa,
