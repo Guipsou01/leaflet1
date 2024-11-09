@@ -369,7 +369,7 @@ function average(a, b, c, d){
   return ((a + b + c + d) / 4);
 };
 btnEditor.onclick = function() {
-  if(editMode == true) {
+  /*if(editMode == true) {
     editMode = false;
     updateSelector();
     btnEditorContent.textContent = "Editor (off)";
@@ -378,7 +378,7 @@ btnEditor.onclick = function() {
     editMode = true;
     updateSelector();
     btnEditorContent.textContent = "Editor (on)";
-  }
+  }*/
 }
 /**récupere le contenu complet de l'onglet Google focus*/
 async function getContenuTableauGoogle() {
