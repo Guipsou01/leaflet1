@@ -1,1 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Letsgo</title>
+<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://ivansanchez.github.io/Leaflet.ImageOverlay.Rotated/Leaflet.ImageOverlay.Rotated.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pica/8.0.0/pica.min.js"></script>
+<style>
+    .leaflet-interactive {
+        user-select: none;           /* Désactive la sélection de texte par l'utilisateur */
+        pointer-events: none;        /* Empêche l'image de capturer les événements de souris */
+    }
+    .leaflet-image-layer {
+        -webkit-user-drag: none; /* Désactiver le drag sur WebKit (Chrome, Safari) */
+        -moz-user-drag: none;    /* Désactiver le drag sur Firefox */
+    }
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
+    .leaflet-container {
+        height: 400px;
+        width: 600px;
+        max-width: 100%;
+        max-height: 100%;
+    }
+    .leaflet-popup-content {
+        word-wrap: break-word;
+        white-space: normal;
+        max-width: 200px;
+    }
+    #btnModalId {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 10px 20px;
+        background-color: #ff0000;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    #texteInfo {
+        position: relative;
+        top: 50%;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        z-index: 1000;
+        padding: 10px 20px;
+        color: red;
+        border: none;
+        border-radius: 5px;
+        font-size: 20px;
+        cursor: pointer;
+        text-align : center;
+    }
+    #btnModalId:hover {
+        background-color: #ff7373;
+    }
+    #fenetreModaleId {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+        background-color: #ffdede;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #ff0000;
+        border-width: 3px;
+        width: 50%;
+        box-sizing: border-box;
+        overflow-wrap: break-word;
+        overflow: auto;
+        max-height: 80vh;
+        word-wrap: break-word;
+    }
+    .croixModalId {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .croixModalId:hover {
+        color: black;
+    }
+    #btnEditor {
+        position: absolute;
+        top: 20px;
+        right: 120px;
+        z-index: 1000;
+        padding: 10px 20px;
+        background-color: #ff0000;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    #btnEditor:hover {
+        background-color: #ff7373;
+    }
+    #btnMaps {
+        background: none;
+        border: none;
+        font-size: 14px;
+        border-radius: 5px;
+        text-align: center;
+        background-color: #ff0000;
+        color: white;
+        padding: 10px 20px;
+        cursor: pointer;
+        min-width: 160px;
+    }
 
+    #btnMaps:hover {
+        background-color: #ff7373;
+    }
+    #btnMaps:disabled {
+        background-color: #ff7373;
+    }
+
+    .btnMaps-container {
+        position: absolute;
+        top: 20px;
+        left: 80px;
+        z-index: 1000;
+        display: inline-block;
+    }
+
+    #btnMapsList {
+        display: none;
+    }
+
+    #btnMapsList a {
+        font-size: 14px;
+        text-align: center;
+        background-color: #ffc3c3;
+        color: white;
+        padding: 6px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: block;
+    }
+
+    #btnMapsList a:hover {
+        background-color: #ff7373;
+    }
+</style>
+</head>
+<script>
+</script>
+<body>
+    <div id="map" style="width: 1800px; height: 1200px;">
+        <div id="texteInfo">Initialisation</div>
+    </div>
+    <div id="texteCurseur" style="position:absolute; font: size 5px; font-weight:bold; pointer-events:none; z-index:1000;">Je te suis !</div>
+    <div id="fenetreModaleId">
+        <div class="modal-content">
+            <span class="croixModalId">&times;</span>
+            <p><h3>Sources</h3>
+            <b>Code source:</b><br>
+            <a href=https://github.com/Guipsou01/leaflet1>https://github.com/Guipsou01/leaflet1</a><br>
+            <b>Map data:</b><br>
+            <a id="lienDynamique" href="" target="_blank"></a>
+            <p><h3>Credits:</h3>
+            <b>Leaflet:</b><br>
+            Free library to use map<br>
+            <b>Marioverse discord server:</b><br>
+            General informations about the lore of mario.<br>
+            <b>Illuminarchie:</b><br>
+            Discovery of Leaflet, also made a map using Leaflet here !:<br>
+            <a href='https://www.archie-harrodine.com/mario-map-project/'>https://www.archie-harrodine.com/mario-map-project/</a><br>
+            <b>All map makers!:</b><br>
+            Credits for each Map by clicking on it.</p>
+        </div>
+    </div>
+    <div class="btnMaps-container">
+        <button id="btnMaps"><div id="btnMapsContent"></button>
+        <div id="btnMapsList" class="btnMaps-list"></div>
+    </div>
+    <button id="btnModalId">Credits</button>
+    <button id="btnEditor"><div id="btnEditorContent"></div></button>
+    <script src="leaflet.js"></script>
+    <script src="mushroomSelector.js"></script>
+    <script src="fonctions.js"></script>
+    <script type="module">
+        corps();
+    </script>
+</body>
+</html>
