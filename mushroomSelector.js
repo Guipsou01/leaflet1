@@ -208,8 +208,8 @@ function mushroomSelectorMouseHold(){
 function mushroomSelectorMouseAppui(){
   //console.log("appui!");
   if(selector1Edit != null && mode != MODE_LECTURE && rgImageFocus >= 0 && actionEnCours == ACTNULL){
-    selector1Edit.off('mousedown');//Supprime tous les gestionnaires 'mousedown' précédents
-    selector1Edit.on('mousedown', (e) => {//Ajoute un seul gestionnaire 'mousedown'
+    objListLeaflet[rgImageFocus][1].off('mousedown');//Supprime tous les gestionnaires 'mousedown' précédents
+    objListLeaflet[rgImageFocus][1].on('mousedown', (e) => {//Ajoute un seul gestionnaire 'mousedown'
       //console.log("Appui champignon golden");
       leaflet.disableDragging();
       if(mode == MODE_DEPLACEMENT) actionEnCours = ACTDEPLACEMENT;
