@@ -11,6 +11,14 @@
     <script src="https://ivansanchez.github.io/Leaflet.ImageOverlay.Rotated/Leaflet.ImageOverlay.Rotated.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pica/8.0.0/pica.min.js"></script>
 <style>
+    .leaflet-interactive {
+        user-select: none;           /* Désactive la sélection de texte par l'utilisateur */
+        pointer-events: none;        /* Empêche l'image de capturer les événements de souris */
+    }
+    .leaflet-image-layer {
+        -webkit-user-drag: none; /* Désactiver le drag sur WebKit (Chrome, Safari) */
+        -moz-user-drag: none;    /* Désactiver le drag sur Firefox */
+    }
     html, body {
         height: 100%;
         margin: 0;
@@ -193,4 +201,3 @@
     </script>
 </body>
 </html>
-
