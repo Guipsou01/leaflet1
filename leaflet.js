@@ -1,17 +1,18 @@
 //FICHIER REGROUPANT TOUTE LES FONCTIONS LIEES DIRECTEMENT A LEAFLET
 var tiles = null;
 var popupSelect;
-var isHolding = false;
 var disableClick = false;
 
 
 class LeafletMap {
   #map;
+  #holdInterval;
+  #isHolding = false;
   constructor() {
     this.#map = L.map('map').setView([0, 0], 13).setZoom(2);
     this.#map.on('moveend', this.actualiseMap.bind(this));
     // Exécuter cette fonction chaque fois que la variable est mise à jour
-    this.#map.on('mousemove', function(e) {
+    this.#map.on('mousemove', (e) => {
       const texte = document.getElementById('texteCurseur');
       mouseLat = e.latlng.lat; // valeur du textue
       mouseLng = e.latlng.lng; 
@@ -24,21 +25,26 @@ class LeafletMap {
       //
       //getOverlayRotatedParams();
     });
-    this.#map.on('click', async function(e) {
+    this.#map.on('click', async (e) => {
       try{
         //console.log("click");
         if(disableClick == false){
-          var layerFin = null;
+          var layerFin = -1;//rang
           await resetSelector();
           for(var i = 0; i < objListLeaflet.length; i++){
             var points = objListLeaflet[i][0];
-            if(points[0] == 'IMG-LX-CENTER' || points[0] == 'IMG-LX-CENTER-R'){
-              if(await pointDansCarre(e.latlng.lng,e.latlng.lat,points[1],points[2],points[3],points[4],points[5],points[6],points[7],points[8])){
-                layerFin = objListLeaflet[i];//peut en select plusieurs en un click, le rang du dernier sera gardé
+            if(points[0] == IMAGE){
+              if(points[19] == false){//si l'objet n'est pas un mipmap
+                if(await pointDansCarre(e.latlng.lng,e.latlng.lat,points[1],points[2],points[3],points[4],points[5],points[6],points[7],points[8])){
+                  layerFin = i;//peut en select plusieurs en un click, le rang du dernier sera gardé
+                }
               }
             }
           }
-          if(layerFin != null) {await actionImageFocus(layerFin);}
+          if(layerFin != null) {
+            await insertImageFocus(layerFin);
+            await actionImageFocus();
+          }
         }
         else disableClick = false;
       }
@@ -47,61 +53,87 @@ class LeafletMap {
         throw error;
       }
     });
-    this.#map.on('mousedown', function(e){
-      isHolding = true; // Fin de l'appui
-      //holdInterval = setInterval(function() {
-        //console.log("Bah!");
-      //  mushroomSelectorMouseHold();
-      //}, 100); // Vérifie toutes les 100 ms
+    this.#map.on('mousedown', (e) => {
+      this.#isHolding = true;
+      mushroomSelectorMouseAppui();
+      this.#holdInterval = setInterval(function() {
+        mushroomSelectorMouseHold();
+      }, 50);//verifie toute les 100ms
     });
-    this.#map.on('mouseup', function(e) {
-      isHolding = false; // Fin de l'appui
-      //if(isHolding2) disableClick = true;
-      //isHolding2 = false;
-      //console.log("Relache");
-      //map.dragging.enable();
-      //clearInterval(holdInterval); // Stopper l'intervalle
+    this.#map.on('mouseup', (e) => {
+      this.#isHolding = false;
+      clearInterval(this.#holdInterval);//stop le spam
+      mushroomSelectorMouseRelache();
     });
   }
   /**--*/
   popup(x, y, content){
     //console.log("affiche popup");
     popupSelect = L.popup()
-    .setLatLng(L.latLng(y,x))  // Positionner le pop-up à l'endroit du clic
-    .setContent(content)  // Contenu du pop-up
-    .openOn(this.#map);  // Ouvrir le pop-up sur la carte
+    .setLatLng(L.latLng(y,x))
+    .setContent(content)
+    .openOn(this.#map);
+  }
+  async enableDragging(){
+    await this.#map.dragging.enable();
   }
   /**--*/
   async disableDragging(){
     await this.#map.dragging.disable();
   }
   /**--*/
+  async isDraggingDisabled(){
+    return this.#map.dragging == false;
+  }
+  /**--*/
   async closePopup(){
     await this.#map.closePopup();
   }
-  /**--*/
-  async ifObjExist(data){
-    var retour = false;
-    this.#map.eachLayer(function(layer) {
-      if(layer == getLayerObjByData(data)) {
-        retour = true;
-      }
-    });
-    return  retour;
-  }
-  /**Ajoute un objet à leaflet depuis la liste des commandes complète */
-  async addObj(rg){
-    if(objListLeaflet[rg][3] == true && await this.ifObjExist(objListLeaflet[rg][0]) == false) await objListLeaflet[rg][1].addTo(this.#map);
-  }
-  /**Supprime tout les éléments enregistrés dans leaflet, sauf les popups globaux */
-  async removeAllObj(){
+  /**test si un objet similaire éxiste dans la liste leaflet, prend un objet en parametre*/
+  async ifObjExist(obj){
     try{
-
+      var retour = false;
       this.#map.eachLayer((layer) => {
-        if (!(layer instanceof L.Popup)) {
-          this.#map.removeLayer(layer);
-        }
+        if(layer == obj) {retour = true;}
       });
+      return  retour;
+    } catch(error) {
+      console.error("Erreur dans l'insertion d'objet leaflet");
+      throw error;
+    }
+  }
+  /**Ajoute un objet à leaflet depuis la liste des commandes complète si celui ci n'est pas déja éxistant */
+  async addObj(rg){
+    try{
+      //if(await this.ifObjExist(objListLeaflet[rg][1]) && objListLeaflet[rg][0][0] == TILEMAP_DEFAULT) console.log("n'ajoutera pas tileLayer");//si tilelayer déja instancié, ne le rajoute pas
+      if(rg >= objListLeaflet.length || rg < 0) {
+        console.error("Le rang a rajouter ne correspond a aucun élément de la liste des objets: " + rg + " taille liste: " + objListLeaflet.length);
+      }
+      else if(objListLeaflet[rg][3] == true && (await this.ifObjExist(objListLeaflet[rg][1])) == false) {//si l'objet doit etre affiché et l'objet n'éxiste pas déja
+        await objListLeaflet[rg][1].addTo(this.#map);
+      }
+    } catch(error) {
+      console.error("Erreur dans l'insertion d'objet leaflet");
+      throw error;
+    }
+  }
+  /**Supprime tout les éléments enregistrés dans leaflet, sauf les popups globaux et la tilemap globale*/
+  async removeAllObj(removetotal){
+    try{
+      if(removetotal == true){
+        this.#map.eachLayer((layer) => {
+          if (!(layer instanceof L.Popup)) {
+            this.#map.removeLayer(layer);
+          }
+        });
+      }
+      else {
+        this.#map.eachLayer((layer) => {
+          if (!(layer instanceof L.Popup) && !(layer instanceof L.TileLayer)) {
+            this.#map.removeLayer(layer);
+          }
+        });
+      }
     } catch(error) {
       console.error("Erreur dans la suppression d'objet leaflet");
       throw error;
@@ -110,7 +142,7 @@ class LeafletMap {
   /**supprime tout les éléments d'une carte, vérifie le tracage de nouveaux éléments et les insère dans la carte*/
   async actualiseMap(){
     try{
-      await this.removeAllObj();
+      await this.removeAllObj(false);
       for (var i = 0; i < objListLeaflet.length; i++) {
         await calculTracabilite(i);
         //await actualiseObjOnLLMap(i);//tracage au cas par cas
@@ -121,6 +153,11 @@ class LeafletMap {
       console.error("Erreur dans la suppression d'objet leaflet");
       throw error;
     }
+  }
+  async getNbObjets(){
+    var nb = 0;
+    this.#map.eachLayer(function(layer) {nb++;});
+    return nb;
   }
   /**-*/
   async getMapBounds(){
@@ -179,10 +216,23 @@ function generateTile(dataa){
   });
   return tiles;
 }
-async function generateImage3p(dataa){
+async function generateImage(dataa){
   var dataaModif = await generateMipMapIfNecessary(dataa);
   return new Promise((resolve) => {
-  try{
+    try{
+      if(dataa[20] == null){//image sans angle
+        //[[y1, x1], [y2, x2]]
+        var imageBounds3 = [[convertToFloat(dataaModif[2]), convertToFloat(dataaModif[1])], [convertToFloat(dataaModif[6]), convertToFloat(dataaModif[5])]];
+        const imageEvent = L.imageOverlay(dataaModif[11], imageBounds3, {
+          interactive: true,
+        });
+        if(imageEvent == null) {
+          console.error("Erreur dans la génération de l'image " + dataaModif[10]);
+          resolve(null);
+        }
+        resolve(imageEvent);
+      }
+      else{//image avec angle
         //point2,point1,point4
         const imageEvent = L.imageOverlay.rotated(dataaModif[11], L.latLng(convertToFloat(dataaModif[8]), convertToFloat(dataaModif[7])), L.latLng(convertToFloat(dataaModif[6]), convertToFloat(dataaModif[5])), L.latLng(convertToFloat(dataaModif[2]), convertToFloat(dataaModif[1])), { 
           opacity: 1,
@@ -194,35 +244,14 @@ async function generateImage3p(dataa){
           resolve(null);
         }
         resolve(imageEvent);
+      }
     } catch (error) {
       console.error("Erreur dans la génération de l'image ", error);
-      throw error;
+      //throw error;
       //throw erreur;
       resolve(null);
     }
   });
-}
-async function generateImage(dataa){
-  try{
-    var dataaModif = await generateMipMapIfNecessary(dataa);
-    return new Promise((resolve) => {
-      //console.log("insertion image "+dataa[10]+"...");
-      //[[y1, x1], [y2, x2]]
-      var imageBounds3 = [[convertToFloat(dataaModif[2]), convertToFloat(dataaModif[1])], [convertToFloat(dataaModif[6]), convertToFloat(dataaModif[5])]];
-      const imageEvent = L.imageOverlay(dataaModif[11], imageBounds3, {
-        interactive: true,
-      });
-      if(imageEvent == null) {
-        console.error("Erreur dans la génération de l'image " + dataaModif[10]);
-        resolve(null);
-      }
-      resolve(imageEvent);
-    });
-  } catch (error) {
-    console.error("Erreur dans la génération de l'image:", error);
-    //throw erreur;
-    resolve(null);
-  }
 }
 async function generateMarker(dataa){
   return new Promise((resolve) => {
@@ -258,7 +287,7 @@ async function generateMarkerStatic(x,y,lx,ly,iconUrl){
       iconSize:     [lx, ly], // size of the icon, 38;95 pour la feuille
       iconAnchor:   [lx / 2, ly / 2], // point of the icon which will correspond to marker's location, 22;94 pour la feuille
       });
-      var markerRetour = L.marker([convertToFloat(y), convertToFloat(x)], {icon: greenIcon, interactive: false});
+      var markerRetour = L.marker([convertToFloat(y), convertToFloat(x)], {icon: greenIcon, interactive: true});
       if(markerRetour == null) {
         console.error('Erreur lors du chargement du marker ' + dataa[6]);
         resolve(null);
@@ -313,27 +342,4 @@ async function resizeImage(imageInfos, width, height) {
       throw error;
     }
   });
-}
-function changePosImage3P(imageOverlay){
-  var points = imageFocus.options.data;
-  var moveX = mouseLng - points[8];
-  var moveY = mouseLat - points[9];
-  //console.log("move!");
-  imageFocus.options.data[0] = points[0] + moveX;
-  var px1 = imageFocus.options.data[0];
-  imageFocus.options.data[1] = points[1] + moveY;
-  var py1 = imageFocus.options.data[1];
-  imageFocus.options.data[2] = points[2] + moveX;
-  imageFocus.options.data[3] = points[3] + moveY;
-  imageFocus.options.data[4] = points[4] + moveX;
-  var px2 = imageFocus.options.data[4];
-  imageFocus.options.data[5] = points[5] + moveY;
-  var py2 = imageFocus.options.data[5];
-  imageFocus.options.data[6] = points[6] + moveX;
-  imageFocus.options.data[7] = points[7] + moveY;
-  imageFocus.options.data[8] = points[8] + moveX;
-  imageFocus.options.data[9] = points[9] + moveY;
-  imageOverlay.setBounds([[py1, px1], [py2, px2]]);
-  //changeSelectorPos();
-  changeSelectorPos(points[8],points[9],points[0],points[1],points[2],points[3],points[4],points[5],points[6],points[7]);
 }
