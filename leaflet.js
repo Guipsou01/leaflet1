@@ -220,6 +220,7 @@ async function generateImage(dataa){
   var dataaModif = await generateMipMapIfNecessary(dataa);
   return new Promise((resolve) => {
     try{
+      if(dataa[20] == null) dataa[20] = 0;
       if(dataa[20] == null){//image sans angle
         //[[y1, x1], [y2, x2]]
         var imageBounds3 = [[convertToFloat(dataaModif[2]), convertToFloat(dataaModif[1])], [convertToFloat(dataaModif[6]), convertToFloat(dataaModif[5])]];
