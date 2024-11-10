@@ -288,7 +288,7 @@ async function generateMarkerStatic(x,y,lx,ly,iconUrl){
       iconSize:     [lx, ly], // size of the icon, 38;95 pour la feuille
       iconAnchor:   [lx / 2, ly / 2], // point of the icon which will correspond to marker's location, 22;94 pour la feuille
       });
-      var markerRetour = L.marker([convertToFloat(y), convertToFloat(x)], {icon: greenIcon, interactive: true});
+      var markerRetour = L.marker([convertToFloat(y), convertToFloat(x)], {icon: greenIcon, interactive: false});
       if(markerRetour == null) {
         console.error('Erreur lors du chargement du marker ' + dataa[6]);
         resolve(null);
