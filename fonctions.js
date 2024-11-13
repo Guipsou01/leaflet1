@@ -213,7 +213,7 @@ async function traitementLigneGoogle(lignes, rg, nbtot){
             var lx = convertToFloat(lignes[3]);
             var imgDesc = lignes[5];
             imagePtee.src = lignes[4];
-            imagePtee.onload = function() {
+            imagePtee.onload = () => {
               var ly = imagePtee.height / imagePtee.width * lx;
               objlistGoogle.push([MARKER,plan,"",[convertToFloat(lignes[1]),convertToFloat(lignes[2]),lx,ly],lignes[4],imgDesc]);
               resolve();
@@ -252,6 +252,7 @@ async function traitementLigneGoogle(lignes, rg, nbtot){
             imagePtee.src = lignes[6];
             imagePtee.onload = async function() {
               ly = imagePtee.height / imagePtee.width * lx;
+              if(isNaN(angle)) throw new Error(`Erreur de lecture de l'angle: vérifier spreadsheet`);;
               var tabl = await getPosApresRotation(x1,y1,lx,ly,angle);
               objlistGoogle.push([IMAGE,plan,"",[tabl[0],tabl[1],tabl[2],tabl[3],tabl[4],tabl[5],tabl[6],tabl[7],tabl[8],tabl[9]],lignes[6],lignes[7],lignes[8],lignes[9], imagePtee.width, imagePtee.height, lx, ly, false, angle]);
               resolve();//retour ok
