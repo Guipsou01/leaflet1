@@ -1,8 +1,7 @@
 //FICHIER REGROUPANT LES FONCTIONS LIEES AU MUSHROOMSELECTOR
-var rgImageFocus = -1;
+var cleImageFocus = null;
 var isHolding2 = false;
-var selectorPosX = 0;
-var selectorPosY = 0;
+var selectorPos = new V2F();
 const ACTNULL = 0;
 const ACTDEPLACEMENT = 1;
 const ACTROTATION = 2;
@@ -13,6 +12,7 @@ var actionEnCours = ACTNULL;
 var holdInterval;
 var isHolding = false;
 class MushroomSelector {
+  #isActif = false;
   #selector1 = null;
   #selector2 = null;
   #selector3 = null;
@@ -23,67 +23,125 @@ class MushroomSelector {
   #selector3Edit = null;
   #selector4Edit = null;
   #selector5Edit = null;
+  #cleSetup1  = generateCleUnique();
+  #cleSetup2  = generateCleUnique();
+  #cleSetup3  = generateCleUnique();
+  #cleSetup4  = generateCleUnique();
+  #cleSetup5  = generateCleUnique();
+  #cleSetup6  = generateCleUnique();
+  #cleSetup7  = generateCleUnique();
+  #cleSetup8  = generateCleUnique();
+  #cleSetup9  = generateCleUnique();
+  #cleSetup10 = generateCleUnique();
   constructor() {}
   /**initialisation des données du Mushroom selector */
   async init(){
-    this.#selector1      = await generateMarkerStatic(0,0,10,10,shroom);//PR
-    this.#selector2      = await generateMarkerStatic(0,0,10,10,shroom);//BG
-    this.#selector3      = await generateMarkerStatic(0,0,10,10,shroom);//BD
-    this.#selector4      = await generateMarkerStatic(0,0,10,10,shroom);//HD
-    this.#selector5      = await generateMarkerStatic(0,0,10,10,shroom);//HG
-    this.#selector1Edit  = await generateMarkerStatic(0,0,15,15,goldenShroom);
-    this.#selector2Edit  = await generateMarkerStatic(0,0,15,15,goldenShroom);
-    this.#selector3Edit  = await generateMarkerStatic(0,0,15,15,goldenShroom);
-    this.#selector4Edit  = await generateMarkerStatic(0,0,15,15,goldenShroom);
-    this.#selector5Edit  = await generateMarkerStatic(0,0,15,15,goldenShroom);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "1"],this.#selector1,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "2"],this.#selector2,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "3"],this.#selector3,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "4"],this.#selector4,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "5"],this.#selector5,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "6"],this.#selector1Edit,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "7"],this.#selector2Edit,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "8"],this.#selector3Edit,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS, "9"],this.#selector4Edit,0,false]);
-    await objListLeaflet.push([[MARKER_STATIC_MS,"10"],this.#selector5Edit,0,false]);
+    const setup1 = createDataObjet(MARKER_STATIC_MS);
+    const setup2 = createDataObjet(MARKER_STATIC_MS);
+    setup1.l = new V2F(10,10);
+    setup1.url = shroom;
+    setup2.l = new V2F(15,15);
+    setup2.url = goldenShroom;
+    var setupN1  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN2  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN3  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN4  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN5  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN6  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN7  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN8  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN9  = createDataObjet(MARKER_STATIC_MS); 
+    var setupN10 = createDataObjet(MARKER_STATIC_MS); 
+    this.#copyValues(setupN1, setup1);
+    this.#copyValues(setupN2, setup1);
+    this.#copyValues(setupN3, setup1);
+    this.#copyValues(setupN4, setup1);
+    this.#copyValues(setupN5, setup1);
+    this.#copyValues(setupN6, setup2);
+    this.#copyValues(setupN7, setup2);
+    this.#copyValues(setupN8, setup2);
+    this.#copyValues(setupN9, setup2);
+    this.#copyValues(setupN10, setup2);
+    setupN1 = await generateObject(setupN1);//PR
+    this.#selector1 = setupN1.objet;
+    setupN2 = await generateObject(setupN2);//BG
+    this.#selector2 = setupN2.objet;
+    setupN3 = await generateObject(setupN3);//BD
+    this.#selector3 = setupN3.objet;
+    setupN4 = await generateObject(setupN4);//HD
+    this.#selector4 = setupN4.objet;
+    setupN5 = await generateObject(setupN5);//HG
+    this.#selector5 = setupN5.objet;
+    setupN6 = await generateObject(setupN6);
+    this.#selector1Edit = setupN6.objet;
+    setupN7 = await generateObject(setupN7);
+    this.#selector2Edit = setupN7.objet;
+    setupN8 = await generateObject(setupN8);
+    this.#selector3Edit = setupN8.objet;
+    setupN9 = await generateObject(setupN9);
+    this.#selector4Edit = setupN9.objet;
+    setupN10 = await generateObject(setupN10);
+    this.#selector5Edit = setupN10.objet;
+    mapListLeaflet.set(this.#cleSetup1, setupN1 );
+    mapListLeaflet.set(this.#cleSetup2, setupN2 );
+    mapListLeaflet.set(this.#cleSetup3, setupN3 );
+    mapListLeaflet.set(this.#cleSetup4, setupN4 );
+    mapListLeaflet.set(this.#cleSetup5, setupN5 );
+    mapListLeaflet.set(this.#cleSetup6, setupN6 );
+    mapListLeaflet.set(this.#cleSetup7, setupN7 );
+    mapListLeaflet.set(this.#cleSetup8, setupN8 );
+    mapListLeaflet.set(this.#cleSetup9, setupN9 );
+    mapListLeaflet.set(this.#cleSetup10,setupN10);
+  }
+  isActif(){
+    return this.#isActif == true;
+  }
+  active(){
+    this.#isActif = true;
+  }
+  disable(){
+    this.#isActif = false;
   }
   /**change la position globale du sélecteur ainsi que celui de ces markers*/
-  async changePos(px,py,x1,y1,x2,y2,x3,y3,x4,y4){
-    selectorPosX = px;
-    selectorPosY = py;
-    await     this.#selector1.setLatLng(L.latLng(py,px));
-    await     this.#selector2.setLatLng(L.latLng(y1,x1));
-    await     this.#selector3.setLatLng(L.latLng(y2,x2));
-    await     this.#selector4.setLatLng(L.latLng(y3,x3));
-    await     this.#selector5.setLatLng(L.latLng(y4,x4));
-    await this.#selector1Edit.setLatLng(L.latLng(py,px));
-    await this.#selector2Edit.setLatLng(L.latLng(y1,x1));
-    await this.#selector3Edit.setLatLng(L.latLng(y2,x2));
-    await this.#selector4Edit.setLatLng(L.latLng(y3,x3));
-    await this.#selector5Edit.setLatLng(L.latLng(y4,x4));
+  async changePos(p,p1,p2,p3,p4){
+    selectorPos.set(p);
+    await     this.#selector1.setLatLng(toLLCoords( p));
+    await     this.#selector2.setLatLng(toLLCoords(p1));
+    await     this.#selector3.setLatLng(toLLCoords(p2));
+    await     this.#selector4.setLatLng(toLLCoords(p3));
+    await     this.#selector5.setLatLng(toLLCoords(p4));
+    await this.#selector1Edit.setLatLng(toLLCoords( p));
+    await this.#selector2Edit.setLatLng(toLLCoords(p1));
+    await this.#selector3Edit.setLatLng(toLLCoords(p2));
+    await this.#selector4Edit.setLatLng(toLLCoords(p3));
+    await this.#selector5Edit.setLatLng(toLLCoords(p4));
   }
   /**réinitialise la position et la visibilité des icones, l'affichage du popup, défocus l'image select*/
   async reset(){
     leaflet.closePopup();
-    rgImageFocus = -1;
-    await this.changePos(0,0,0,0,0,0,0,0,0,0);
+    cleImageFocus = null;
+    await this.changePos(new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0));
     this.disableMarkers();
   }
   /**lance l'affichage adéquat du sélecteur: maj des positions, active les bon markers, ouverture de popups*/
   async action(){
-    if(rgImageFocus >= 0){
-      var points = objListLeaflet[rgImageFocus][0];
-      if(points[0] == IMAGE || points[0] == TEXT){
-        await this.changePos(points[3][0],points[3][1],points[3][2],points[3][3],points[3][4],points[3][5],points[3][6],points[3][7],points[3][8],points[3][9]);
-        await this.disableMarkers();
-        if(mode != MODE_LECTURE) leaflet.closePopup();
-        await this.activeMarkers();
-        await leaflet.actualiseMap();
-        if(points[0] == IMAGE){
+    if(cleImageFocus != null){
+      if(this.#isActif){
+        var points = mapListLeaflet.get(cleImageFocus);
+        var type = points.type;
+        if(type == IMAGE || type == TEXTE){
+          await this.changePos(points.vPos,points.vPos1,points.vPos2,points.vPos3,points.vPos4);
+          await this.disableMarkers();
+          if(mode != MODE_LECTURE) leaflet.closePopup();
+          await this.activeMarkers();
+          await actualiseMap();
           //image sans angle
-          if(points[13] == null && mode == MODE_LECTURE) leaflet.popup((points[3][0]),(points[3][1] + points[11] / 2),"<h3>" + points[5] + "</h3><br>Author:  " + points[6] + "<br><br>Website link:<br><a href=" + points[7] + ">" + points[7] + "</a><br><br> GPS position: " + convertToFloat(points[3][0]).toFixed(1) + ":" + convertToFloat(points[3][1]).toFixed(1) + "<br>Image size: " + convertToFloat(points[8]) + ":" + convertToFloat(points[9]) + "<br>Image scale:" + convertToFloat(points[10]).toFixed(3) + ":" + convertToFloat(points[11]).toFixed(3));
+          if(points.vAngle == null && mode == MODE_LECTURE) leaflet.popup(points,"<h3>" + points.titre + "</h3><br>Author:  " + points.auteur + "<br><br>Website link:<br><a href=" + points.site + ">" + points.site + "</a><br><br> GPS position: " + convertToFloat(points.vPos.xAbs()).toFixed(1) + ":" + convertToFloat(points.vPos.yAbs()).toFixed(1) + "<br>Image size: " + convertToFloat(points.vImgTaille.xAbs()) + ":" + convertToFloat(points.vImgTaille.yAbs()) + "<br>Image scale:" + convertToFloat(points.vTaille.xAbs()).toFixed(3) + ":" + convertToFloat(points.vTaille.yAbs()).toFixed(3));
           //image avec angle
-          else if (points[13] != null && mode == MODE_LECTURE) leaflet.popup((points[3][0]),(points[3][1] + points[11] / 2),"<h3>" + points[5] + "</h3><br>Author:  " + points[6] + "<br><br>Website link:<br><a href=" + points[7] + ">" + points[7] + "</a><br><br> GPS position: " + convertToFloat(points[3][0]).toFixed(1) + ":" + convertToFloat(points[3][1]).toFixed(1) + "<br>Image size: " + convertToFloat(points[8]) + ":" + convertToFloat(points[9]) + "<br>Image scale:" + convertToFloat(points[10]).toFixed(3) + ":" + convertToFloat(points[11]).toFixed(3) + "<br>Angle: " + points[13]);
+          if(points.vAngle != null && mode == MODE_LECTURE) leaflet.popup(points,"<h3>" + points.titre + "</h3><br>Author:  " + points.auteur + "<br><br>Website link:<br><a href=" + points.site + ">" + points.site + "</a><br><br> GPS position: " + convertToFloat(points.vPos.xAbs()).toFixed(1) + ":" + convertToFloat(points.vPos.yAbs()).toFixed(1) + "<br>Image size: " + convertToFloat(points.vImgTaille.xAbs()) + ":" + convertToFloat(points.vImgTaille.yAbs()) + "<br>Image scale:" + convertToFloat(points.vTaille.xAbs()).toFixed(3) + ":" + convertToFloat(points.vTaille.yAbs()).toFixed(3) + "<br>Angle: " + points.vAngle.getAngle());
+        }
+        else if(type == MARKER){
+          leaflet.popup(points,points.desc);
         }
         else leaflet.closePopup();
       }
@@ -91,76 +149,75 @@ class MushroomSelector {
   }
   /**active l'affichage des markers si image focus existante et mode lecture*/
   async activeMarkers(){
-    if(rgImageFocus >= 0){
+    if(cleImageFocus != null){
       if(mode != MODE_LECTURE){
-        objListLeaflet[await objectRGByObj(this.#selector1Edit)][3] = true;
-        objListLeaflet[await objectRGByObj(this.#selector2Edit)][3] = true;
-        objListLeaflet[await objectRGByObj(this.#selector3Edit)][3] = true;
-        objListLeaflet[await objectRGByObj(this.#selector4Edit)][3] = true;
-        objListLeaflet[await objectRGByObj(this.#selector5Edit)][3] = true;
+        mapListLeaflet.get(this.#cleSetup6 ).actif = true;
+        mapListLeaflet.get(this.#cleSetup7 ).actif = true;
+        mapListLeaflet.get(this.#cleSetup8 ).actif = true;
+        mapListLeaflet.get(this.#cleSetup9 ).actif = true;
+        mapListLeaflet.get(this.#cleSetup10).actif = true;
       }
       else{
         //console.log("activation affichage mushrooms");
-        objListLeaflet[await objectRGByObj(this.#selector1)][3] = true;
-        objListLeaflet[await objectRGByObj(this.#selector2)][3] = true;
-        objListLeaflet[await objectRGByObj(this.#selector3)][3] = true;
-        objListLeaflet[await objectRGByObj(this.#selector4)][3] = true;
-        objListLeaflet[await objectRGByObj(this.#selector5)][3] = true;
+        mapListLeaflet.get(this.#cleSetup1).actif = true;
+        mapListLeaflet.get(this.#cleSetup2).actif = true;
+        mapListLeaflet.get(this.#cleSetup3).actif = true;
+        mapListLeaflet.get(this.#cleSetup4).actif = true;
+        mapListLeaflet.get(this.#cleSetup5).actif = true;
       }
     }
   }
+  /**copy colle certains parametres de marker static ms */
+  #copyValues(data1, data2){
+    data1.l = data2.l;
+    data1.url = data2.url;
+  }
   /**desactive l'affichage des markers */
   async disableMarkers(){
-    objListLeaflet[await objectRGByObj(this.#selector1Edit)][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector2Edit)][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector3Edit)][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector4Edit)][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector5Edit)][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector1    )][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector2    )][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector3    )][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector4    )][3] = false;
-    objListLeaflet[await objectRGByObj(this.#selector5    )][3] = false;
+    mapListLeaflet.get(this.#cleSetup1 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup2 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup3 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup4 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup5 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup6 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup7 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup8 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup9 ).actif = false;
+    mapListLeaflet.get(this.#cleSetup10).actif = false;
   }
+  /**actions de relachement de souris */
   async mouseRelache(){
-    clearInterval(holdInterval);//stop le spam
-    isHolding = false;
-    if(leaflet.isDraggingDisabled()) {
-      leaflet.enableDragging();
-      actionEnCours = ACTNULL;
-    }
+    if(this.#isActif){
+      clearInterval(holdInterval);//stop le spam
+      isHolding = false;
+      if(leaflet.isDraggingDisabled()) {
+        leaflet.enableDragging();
+        actionEnCours = ACTNULL;
+      }
+    };
   }
-  async mouseHold(){
+  /**action de souris enfoncé, s'éxécute en boucle */
+  async modeDeplacementSpam(){
     changePosObj();//cette fonction pose elle un probleme si selecteur 1 nul ?
+    for (const [key, data] of mapListLeaflet) await updatePosOnLLObj(data);
   }
+  /**actions d'appui de souris */
   async MouseAppui(){
     //console.log("appui!");
-    if(this.#selector1Edit != null && mode != MODE_LECTURE && rgImageFocus >= 0 && actionEnCours == ACTNULL){
+    if(this.#isActif && this.#selector1Edit != null && (mode == MODE_DEPLACEMENT || mode == MODE_ROTATION || mode == MODE_ECHELLE || mode == MODE_INSERTION) && cleImageFocus != null && actionEnCours == ACTNULL){
       isHolding = true;
       //console.log("Appui champignon golden");
       leaflet.disableDragging();
            if(mode == MODE_DEPLACEMENT) actionEnCours = ACTDEPLACEMENT;
       else if(mode == MODE_ROTATION)    actionEnCours = ACTROTATION;
       else if(mode == MODE_ECHELLE)     actionEnCours = ACTECHELLE;
-      mouseLngLastState = mouseLng;
+      mouseLngLastState = mousePos.x;
       //imageFocus.setCorners(newCorner1, newCorner2, newCorner3);
-      holdInterval = setInterval(() => {this.mouseHold();}, 10);//verifie toute les 100ms
+      holdInterval = setInterval(() => {this.modeDeplacementSpam();}, 10);//verifie toute les 100ms
     }
   }
   /**prend un numéro de rang dans la liste et le retiens en objet focus*/
-  async insertObjetFocus(imgfoc){rgImageFocus = imgfoc;}
-}
-//hitbox de détection
-function pointDansCarre(px,py,x1,y1,x2,y2,x3,y3,x4,y4){
-  return (pointDansTriangle(px, py, x1, y1, x2, y2, x3, y3) || pointDansTriangle(px, py, x1, y1, x3, y3, x4, y4));
-}
-function pointDansTriangle(px, py, x1, y1, x2, y2, x3, y3){
-	  if(dot(false, px, py, x1, y1, x2, y2)
-    && dot(false, px, py, x2, y2, x3, y3)
-    && dot(false, px, py, x3, y3, x1, y1)) return true;
-    return false;
-}
-function dot(gauche, px, py, x1, y1, x2, y2){
-  if(gauche) return ((x2 - x1) * (py - y1) - (px - x1) * (y2 - y1) < 0);
-  else return ((x2 - x1) * (py - y1) - (px - x1) * (y2 - y1) > 0);
+  async insertObjetFocus(imgfoc){
+    cleImageFocus = imgfoc;
+  }
 }
