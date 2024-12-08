@@ -9,8 +9,6 @@ const ACTECHELLE = 3;
 const shroom = "https://mario.wiki.gallery/images/8/8b/SuperMushroom_-_2D_art.svg";
 const goldenShroom = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/ed991cf4-7c8c-4530-b6ba-a3abf3ab2eae/dd36ts2-3a51d2ff-7f4d-41a4-8e60-2cbaa0ae1bc8.png/v1/fill/w_900,h_900/super_mario__golden_mushroom_2d_by_joshuat1306_dd36ts2-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9OTAwIiwicGF0aCI6IlwvZlwvZWQ5OTFjZjQtN2M4Yy00NTMwLWI2YmEtYTNhYmYzYWIyZWFlXC9kZDM2dHMyLTNhNTFkMmZmLTdmNGQtNDFhNC04ZTYwLTJjYmFhMGFlMWJjOC5wbmciLCJ3aWR0aCI6Ijw9OTAwIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.eLm9NIiTXusG0laKtKWmLiqZNSK1PcWbEJY039obNhY";
 var actionEnCours = ACTNULL;
-var holdInterval;
-var isHolding = false;
 class MushroomSelector {
   #isActif = false;
   #selector1 = null;
@@ -82,6 +80,26 @@ class MushroomSelector {
     this.#selector4Edit = setupN9.objet;
     setupN10 = await generateObject(setupN10);
     this.#selector5Edit = setupN10.objet;
+    setupN1.titre  = "msms1";
+    setupN2.titre  = "msms2";
+    setupN3.titre  = "msms3";
+    setupN4.titre  = "msms4";
+    setupN5.titre  = "msms5";
+    setupN6.titre  = "msms6";
+    setupN7.titre  = "msms7";
+    setupN8.titre  = "msms8";
+    setupN9.titre  = "msms9";
+    setupN10.titre = "msms10";
+    setupN1.key = this.#cleSetup1;
+    setupN2.key = this.#cleSetup2;
+    setupN3.key = this.#cleSetup3;
+    setupN4.key = this.#cleSetup4;
+    setupN5.key = this.#cleSetup5;
+    setupN6.key = this.#cleSetup6;
+    setupN7.key = this.#cleSetup7;
+    setupN8.key = this.#cleSetup8;
+    setupN9.key = this.#cleSetup9;
+    setupN10.key = this.#cleSetup10;
     mapListLeaflet.set(this.#cleSetup1, setupN1 );
     mapListLeaflet.set(this.#cleSetup2, setupN2 );
     mapListLeaflet.set(this.#cleSetup3, setupN3 );
@@ -118,37 +136,43 @@ class MushroomSelector {
   }
   /**réinitialise la position et la visibilité des icones, l'affichage du popup, défocus l'image select*/
   async reset(){
-    leaflet.closePopup();
     cleImageFocus = null;
     await this.changePos(new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0));
-    this.disableMarkers();
+    await this.disableMarkers();
   }
   /**lance l'affichage adéquat du sélecteur: maj des positions, active les bon markers, ouverture de popups*/
   async action(){
     if(cleImageFocus != null){
       if(this.#isActif){
-        var points = mapListLeaflet.get(cleImageFocus);
+        var points = await mapListLeaflet.get(cleImageFocus);
+        //console.log(points.titre);
+        //console.log(points, cleImageFocus);
         var type = points.type;
+        //console.log(points.type, " ", points.titre);
+        //await actualiseMap();
+        //await leaflet.removeAllObj(false);
+        //await leaflet.actualiseMap();
+        //for (const [key, value] of mapListLeaflet) {}
+        this.activeMarkers();
+        this.changePos(points.vPos,points.vPos1,points.vPos2,points.vPos3,points.vPos4);
+        if(mode != MODE_LECTURE) leaflet.closePopup();
         if(type == IMAGE || type == TEXTE){
-          await this.changePos(points.vPos,points.vPos1,points.vPos2,points.vPos3,points.vPos4);
-          await this.disableMarkers();
-          if(mode != MODE_LECTURE) leaflet.closePopup();
-          await this.activeMarkers();
-          await actualiseMap();
           //image sans angle
           if(points.vAngle == null && mode == MODE_LECTURE) leaflet.popup(points,"<h3>" + points.titre + "</h3><br>Author:  " + points.auteur + "<br><br>Website link:<br><a href=" + points.site + ">" + points.site + "</a><br><br> GPS position: " + convertToFloat(points.vPos.xAbs()).toFixed(1) + ":" + convertToFloat(points.vPos.yAbs()).toFixed(1) + "<br>Image size: " + convertToFloat(points.vImgTaille.xAbs()) + ":" + convertToFloat(points.vImgTaille.yAbs()) + "<br>Image scale:" + convertToFloat(points.vTaille.xAbs()).toFixed(3) + ":" + convertToFloat(points.vTaille.yAbs()).toFixed(3));
           //image avec angle
-          if(points.vAngle != null && mode == MODE_LECTURE) leaflet.popup(points,"<h3>" + points.titre + "</h3><br>Author:  " + points.auteur + "<br><br>Website link:<br><a href=" + points.site + ">" + points.site + "</a><br><br> GPS position: " + convertToFloat(points.vPos.xAbs()).toFixed(1) + ":" + convertToFloat(points.vPos.yAbs()).toFixed(1) + "<br>Image size: " + convertToFloat(points.vImgTaille.xAbs()) + ":" + convertToFloat(points.vImgTaille.yAbs()) + "<br>Image scale:" + convertToFloat(points.vTaille.xAbs()).toFixed(3) + ":" + convertToFloat(points.vTaille.yAbs()).toFixed(3) + "<br>Angle: " + points.vAngle.getAngle());
+          if(points.vAngle != null && mode == MODE_LECTURE) leaflet.popup(points,"<h3>" + points.titre + "</h3><br>Author:  " + points.auteur + "<br><br>Website link:<br><a href=" + points.site + ">" + points.site + "</a><br> GPS position (abs.): " + convertToFloat(points.vPos.xAbs()).toFixed(1) + ":" + convertToFloat(points.vPos.yAbs()).toFixed(1) + "</a><br> GPS position (rel.): " + convertToFloat(points.vPos.x).toFixed(1) + ":" + convertToFloat(points.vPos.y).toFixed(1) + "<br>Image size: " + convertToFloat(points.vImgTaille.xAbs()) + ":" + convertToFloat(points.vImgTaille.yAbs()) + "<br>Image scale:" + convertToFloat(points.vTaille.xAbs()).toFixed(3) + ":" + convertToFloat(points.vTaille.yAbs()).toFixed(3) + "<br>Angle: " + points.vAngle.getAngle());
         }
         else if(type == MARKER){
-          leaflet.popup(points,points.desc);
+          //
+          this.reset();
+          leaflet.popup(points,points.titre);
         }
         else leaflet.closePopup();
       }
     }
   }
   /**active l'affichage des markers si image focus existante et mode lecture*/
-  async activeMarkers(){
+  activeMarkers(){
     if(cleImageFocus != null){
       if(mode != MODE_LECTURE){
         mapListLeaflet.get(this.#cleSetup6 ).actif = true;
@@ -173,7 +197,7 @@ class MushroomSelector {
     data1.url = data2.url;
   }
   /**desactive l'affichage des markers */
-  async disableMarkers(){
+  disableMarkers(){
     mapListLeaflet.get(this.#cleSetup1 ).actif = false;
     mapListLeaflet.get(this.#cleSetup2 ).actif = false;
     mapListLeaflet.get(this.#cleSetup3 ).actif = false;
@@ -186,37 +210,34 @@ class MushroomSelector {
     mapListLeaflet.get(this.#cleSetup10).actif = false;
   }
   /**actions de relachement de souris */
-  async mouseRelache(){
+  mouseRelache(){
     if(this.#isActif){
-      clearInterval(holdInterval);//stop le spam
-      isHolding = false;
       if(leaflet.isDraggingDisabled()) {
         leaflet.enableDragging();
         actionEnCours = ACTNULL;
       }
     };
   }
-  /**action de souris enfoncé, s'éxécute en boucle */
-  async modeDeplacementSpam(){
-    changePosObj();//cette fonction pose elle un probleme si selecteur 1 nul ?
-    for (const [key, data] of mapListLeaflet) await updatePosOnLLObj(data);
-  }
-  /**actions d'appui de souris */
-  async MouseAppui(){
+  /**actions d'appui de transformation de souris*/
+  async MouseAppui(e){
     //console.log("appui!");
-    if(this.#isActif && this.#selector1Edit != null && (mode == MODE_DEPLACEMENT || mode == MODE_ROTATION || mode == MODE_ECHELLE || mode == MODE_INSERTION) && cleImageFocus != null && actionEnCours == ACTNULL){
-      isHolding = true;
-      //console.log("Appui champignon golden");
-      leaflet.disableDragging();
-           if(mode == MODE_DEPLACEMENT) actionEnCours = ACTDEPLACEMENT;
-      else if(mode == MODE_ROTATION)    actionEnCours = ACTROTATION;
-      else if(mode == MODE_ECHELLE)     actionEnCours = ACTECHELLE;
-      mouseLngLastState = mousePos.x;
-      //imageFocus.setCorners(newCorner1, newCorner2, newCorner3);
-      holdInterval = setInterval(() => {this.modeDeplacementSpam();}, 10);//verifie toute les 100ms
+    leaflet.closePopup();
+    var layerFin = await leaflet.findObjFocus(new V2F(e.latlng.lng, e.latlng.lat));//rang obj focus si objet a focus detecte au niveau de la souris
+    if(layerFin != null) {//si objet trouvé a l'appui...
+      await mush.insertObjetFocus(layerFin);
+      if(this.#isActif && this.#selector1Edit != null && (mode == MODE_DEPLACEMENT || mode == MODE_ROTATION || mode == MODE_ECHELLE || mode == MODE_INSERTION) && cleImageFocus != null && actionEnCours == ACTNULL){
+        leaflet.disableDragging();
+             if(mode == MODE_DEPLACEMENT) actionEnCours = ACTDEPLACEMENT;
+        else if(mode == MODE_ROTATION)    actionEnCours = ACTROTATION;
+        else if(mode == MODE_ECHELLE)     actionEnCours = ACTECHELLE;
+        mouseLngLastState = mousePos.x;
+        //imageFocus.setCorners(newCorner1, newCorner2, newCorner3);
+      }
+      else if(this.#isActif && this.#selector1Edit != null && (mode == MODE_LECTURE) && cleImageFocus != null && actionEnCours == ACTNULL) await this.action();
     }
+    else await this.reset();
   }
-  /**prend un numéro de rang dans la liste et le retiens en objet focus*/
+  /**prend la clé de la liste et la retiens en objet focus*/
   async insertObjetFocus(imgfoc){
     cleImageFocus = imgfoc;
   }
