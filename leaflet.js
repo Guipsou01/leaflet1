@@ -1,13 +1,19 @@
 //FICHIER REGROUPANT TOUTE LES FONCTIONS LIEES DIRECTEMENT A LEAFLET
-
+let clickTimer = null; // Timer pour différencier clic et appui long
+var isHolding = false;
+var holdInterval;
+const LONG_PRESS_THRESHOLD = 300; // Durée en ms pour définir un appui long
+let isMouseDown = false; // État de la souris
+let isHandlingClickOrHold = false; // Empêche la double détection
+//
 class LeafletMap {
-  #popupSelect;
   #disableClick = false;
   #tiles = null;
+  #mapObjetOnLLData = new Map();
   #map;
   constructor() {
     this.#map = L.map('map').setView([0, 0], 13).setZoom(2);
-    this.#map.on('moveend', actualiseMap.bind(this));
+    this.#map.on('moveend', () => actualiseMap(mapListLeaflet, true));
     //
     // Exécuter cette fonction chaque fois que la variable est mise à jour
     this.#map.on('mousemove', (e) => {
@@ -16,49 +22,69 @@ class LeafletMap {
       mousePos.x = e.latlng.lng; 
       //maj du texte
       texte.innerHTML = `${mousePos.x.toFixed(3)} : ${mousePos.y.toFixed(3)}`;
-      //
       texte.style.color = 'white';
       texte.style.left = e.originalEvent.pageX + 20 + 'px';//position du texte
       texte.style.top = e.originalEvent.pageY - 10 + 'px';
       //
       //getOverlayRotatedParams();
     });
-    this.#map.on('click', async (e) => {//click sur la carte
-      try{
-        if(!this.#disableClick && mush.isActif()){
-          await mush.reset();
-          var layerFin = await this.findObjFocus(await new V2F(e.latlng.lng, e.latlng.lat));//rang obj focus si objet a focus detecte au niveau de la souris
-          if(layerFin != null) {
-            await mush.insertObjetFocus(layerFin);
-            await mush.action();
+    this.#map.on('mousedown', async (e) => {
+      //isHolding = true;
+      holdInterval = setInterval(() => {spam();}, 10);//verifie toute les 100ms
+      down(e);
+      if (!isHandlingClickOrHold) {
+        isMouseDown = true; //Marque l'état comme appuyé
+        //Lance un timer pour détecter un appui long
+        clickTimer = setTimeout(async () => {
+          if (isMouseDown) { // Si l'utilisateur maintient l'appui
+            isHandlingClickOrHold = true; // Indique qu'on gère un appui long
+            downConfirmee(e);
           }
-        }
-        else this.#disableClick = false;
-      }
-      catch (error) {throw error;}
-    });
-    this.#map.on('mousedown', async (e) => {//appui bas sur la carte
-      if(mush.isActif()){
-        var layerFin = await this.findObjFocus(await new V2F(e.latlng.lng, e.latlng.lat));//rang obj focus si objet a focus detecte au niveau de la souris
-        if(layerFin != null) {//si objet trouv" a l'appui
-          await mush.insertObjetFocus(layerFin);
-          await mush.action();
-          mush.MouseAppui();
-        }
+        }, LONG_PRESS_THRESHOLD);
       }
     });
-    this.#map.on('mouseup', (e) => {//appui relaché sur la carte
-      if(mush.isActif()){
-        mush.mouseRelache();
+    //this.#map.on('popupopen', (e) => {console.log("Popup affiché avec succès !");});
+    this.#map.on('mouseup', async (e) => {//Lors du relâchement
+      isHolding = false;
+      clearInterval(holdInterval);//stop le spam
+      isMouseDown = false; //Marque l'état comme relâché
+      //Si le timer est encore actif, c'est un clic rapide
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        //Si un appui long n'a pas été détecté
+        if (!isHandlingClickOrHold) {click(e);}
+        else{up(e);}//console.log("relachement");
       }
+      isHandlingClickOrHold = false; //Réinitialise l'état*/
     });
   }
   /**affiche une fenetre de texte html aux coordonnés précisés*/
   popup(data, content){
-    this.#popupSelect = L.popup()
-    .setLatLng(L.latLng(data.vPos.yAbs(),data.vPos.xAbs()))
-    .setContent(content)
-    .openOn(this.#map);
+    try{
+      //if (!data || !data.vPos || typeof data.vPos.yAbs !== "function" || typeof data.vPos.xAbs !== "function") {
+      //  console.error("Invalid data.vPos provided for popup");
+      //  return;
+      //}
+      var vPosData = null;
+      if(data != null) vPosData = L.latLng(data.vPos.yAbs(),data.vPos.xAbs());
+      else vPosData = L.latLng(0,0);
+      //console.log("popup!");
+      this.#map.closePopup();//Supprimer les anciens popups avant d'en ajouter un nouveau
+      const popup = L.popup({ closeOnClick: false, autoClose: false, zIndex: 9999 })//Créer un nouveau popup aux coordonnées de l'événement
+      //.setLatLng(L.latLng(data.vPos.yAbs(),data.vPos.xAbs()))
+      .setLatLng(vPosData)
+      .setContent(content);
+      popup.openOn(this.#map);
+      //detection
+      const popupLatLng = popup.getLatLng();//Vérification de l'attachement du popup
+      if(!popupLatLng) console.log("Le popup n'a pas été correctement attaché.");
+      //else console.log("Popup attaché à :", popupLatLng);
+      this.#map.invalidateSize();
+    } catch (error) {console.error("Erreur lors de la création du popup :", error);}
+  }
+  async actualiseMapLL(){
+    await this.#map.invalidateSize();
   }
   /**active le déplacement*/
   async enableDragging(){
@@ -73,21 +99,8 @@ class LeafletMap {
     return !this.#map.dragging;
   }
   /**ferme les fenetres leaflet si ouvertes*/
-  async closePopup(){
-    await this.#map.closePopup();
-  }
-  /**test si un objet similaire éxiste dans la liste leaflet, prend un objet en parametre*/
-  async ifObjExist(obj){
-    try{
-      var retour = false;
-      this.#map.eachLayer((layer) => {
-        if(layer == obj) retour = true;
-      });
-      return  retour;
-    } catch(error) {
-      console.error("Erreur dans l'insertion d'objet leaflet");
-      throw error;
-    }
+  closePopup(){
+    this.#map.closePopup();
   }
   /**retourne la position sur l'écran en pixels d'une position sur la carte */
   toAbsoluteValue(v2f){
@@ -96,16 +109,21 @@ class LeafletMap {
   toGPSValue(v2f){
     return new V2F(this.#map.containerPointToLatLng(toLLPoint(v2f)).lng, this.#map.containerPointToLatLng(toLLPoint(v2f)).lat);
   }
-  /*retourne la clé de l'objet a la position, null si non trouvé */
+  /**actualise les dépendances des objets et leur vecteurs pour tout les objets de la liste*/
+  async actualiseMapTracee(){
+    await actualiseMap(this.#mapObjetOnLLData, false);
+  }
+  /**retourne la clé de l'objet a la position, null si non trouvé (vérifie uniquement les objets chargés)*/
   async findObjFocus(p){
     var retour = null;
     var plan = -1;
-    for (const [key, points] of mapListLeaflet) {
+    //console.log("balayage de " + this.#mapObjetOnLLData.size + " éléments...");
+    for (const [key, points] of this.#mapObjetOnLLData) {
       if(points.type == MARKER){
         if(await pointDansCarre(p,points.objetCarre[0].vPos.pAbs(),points.objetCarre[3].vPos.pAbs(),points.objetCarre[2].vPos.pAbs(),points.objetCarre[1].vPos.pAbs())) {
           if(plan < points.plan) {
             plan = points.plan;
-            retour = key;
+            retour = points.key;
           }
         }
       }
@@ -114,7 +132,7 @@ class LeafletMap {
         if(!await leaflet.isBig(points) && await pointDansCarre(p,points.vPos1,points.vPos2,points.vPos3,points.vPos4)) {
           if(plan < points.plan) {
             plan = points.plan;
-            retour = key;
+            retour = points.key;
           }
         }
       }
@@ -123,54 +141,70 @@ class LeafletMap {
         if(!await leaflet.isBig(points) && !points.isMipmap && await pointDansCarre(p,points.vPos1.pAbs(),points.vPos2.pAbs(),points.vPos3.pAbs(),points.vPos4.pAbs())) {
           if(plan < points.plan) {
             plan = points.plan;
-            retour = key;
+            retour = points.key;
           }
         }
       }
     }
+    //if(retour != null) console.log("objet trouvé !");
     return retour;
   }
-  /**Ajoute un objet à leaflet depuis la liste des commandes complète si celui ci n'est pas déja éxistant */
-  async addObj(data){
+  /**Ajoute ou supprime un objet à leaflet depuis la liste des commandes complète en fonction de son état actif ou non et de ces sous-objets*/
+  updateObj(data){
     try{
-      if(data == null) throw new Error("l'objet a rajouter est nul");
-      if(data.objet == null) throw new Error("l'objet a rajouter est nul2 " + data.type);
+      if(!data && !data.objet) throw new Error(`L'objet à traiter est invalide ou manquant (${data?.type || "inconnu"})`);
       //si l'objet doit etre affiché et l'objet n'éxiste pas déja
-      else if(data.actif && !(await this.ifObjExist(data.objet))) {
+      
+      if(data.actif) {
         //insertion sur la map...
-        if(data.type == POLYLIGNE) await data.objet[0].addTo(this.#map);
-        else await data.objet.addTo(this.#map);
-        if(data.objetVecteur != null && vecteurVisu) {
-          data.objetVecteur.objet[0].addTo(this.#map);
-        }
-        if(data.objetCarre != null && vecteurVisu){
-          data.objetCarre[0].objet[0].addTo(this.#map);
-          data.objetCarre[1].objet[0].addTo(this.#map);
-          data.objetCarre[2].objet[0].addTo(this.#map);
-          data.objetCarre[3].objet[0].addTo(this.#map);
+        this.#addObjReal(data);
+        if(data.objetVecteur != null) if(data.objetVecteur.actif) this.#addObjReal(data.objetVecteur);
+        if(data.objetCarre != null) {
+          for(var i = 0; i < data.objetCarre.length; i++) if(data.objetCarre[i].actif) this.#addObjReal(data.objetCarre[i]);
         }
       }
-    } catch(error) {
-      throw new Error("Erreur dans l'insertion d'objet leaflet:" + error);
+      else {
+        if(data.objetVecteur != null) {
+          data.objetVecteur.actif = false;
+          this.#removeObj(data.objetVecteur);
+        }
+        if(data.objetCarre != null) {
+          for(var i = 0; i < data.objetCarre.length; i++) {
+            data.objetCarre[i].actif = false;
+            this.#removeObj(data.objetCarre[i]);
+          }
+        }
+        this.#removeObj(data);
+      }
+    } catch(error) {throw new Error("Erreur dans l'insertion d'objet leaflet:" + error);}
+  }
+  /**insert un objet dans les 2 listes (liste leaflet et liste de donnée) */
+  async #addObjReal(data){
+    if (!data || !data.objet || !data.type) throw new Error("Données invalides : 'data' doit contenir 'objet' et 'type'.");
+    if(!(await ifObjExist(this.#map, dataToObject(data)))) {
+      var cleMarkerFocus = generateCleUnique();
+      this.#mapObjetOnLLData.set(cleMarkerFocus, data);
+      dataToObject(data).addTo(this.#map);
     }
   }
-  /**Supprime tout les éléments enregistrés dans leaflet, sauf les popups globaux et la tilemap globale*/
+  /**supprime un élément de la liste, ne fait rien si non trouvé*/
+  async #removeObj(data){
+    if (!data || !data.objet || !data.type) throw new Error("Données invalides : 'data' doit contenir 'objet' et 'type'.");
+    this.#map.removeLayer(dataToObject(data));
+    this.#mapObjetOnLLData.delete(data.key);
+  }
+  /**Supprime tout les éléments enregistrés dans leaflet, sauf les popups globaux et la tilemap globale dans le cas d'une suppression partielle*/
   async removeAllObj(removetotal){
     try{
       if(removetotal){
-        this.#map.eachLayer((layer) => {
-          if(!(layer instanceof L.Popup)) this.#map.removeLayer(layer);
-        });
+        this.#map.eachLayer((layer) => {this.#map.removeLayer(layer);});
+        this.#mapObjetOnLLData.clear();
       }
       else {
-        this.#map.eachLayer((layer) => {
-          if(!(layer instanceof L.Popup) && !(layer instanceof L.TileLayer)) this.#map.removeLayer(layer);
-        });
+        //content.objet instanceof L.Layer <- ne marche pas pour les polylignes (content.objet[0] instanceof L.Layer)
+        for (const [key, content] of this.#mapObjetOnLLData) if(!(content.objet instanceof L.Popup) && !(content.objet instanceof L.TileLayer)) this.#removeObj(content);
       }
-    } catch(error) {
-      console.error("Erreur dans la suppression d'objet leaflet");
-      throw error;
-    }
+    } catch(error) {throw new Error("Erreur dans la suppression d'objet leaflet: " + error)};
   }
   /**retourne le nombre d'objets détecté dans la carte leaflet */
   async getNbObjets(){
@@ -184,8 +218,8 @@ class LeafletMap {
   }
   /**Fonction qui actualise l'état de l'objet sur la map*/
   async actualiseObj(data){
-    if(data.actif && await !ifObjExist(data.obj)) await data.obj.addTo(this.#map);
-    else if(!data.actif && await !ifObjExist(data.obj)) await map.removeLayer(data.obj);
+    if(data.actif && await !ifObjExist(this.#map, data.obj)) await this.#addObjReal(data);
+    else if(!data.actif && await !ifObjExist(this.#map, data.obj)) await this.#removeObj(data);
   }
   /**affiche le nb d'éléments présents dans la map leaflet */
   async stats(){
@@ -309,6 +343,7 @@ async function generateObject(data){
       }
       else {
         data.objet = objEvent;
+        data.vPos.setData(data);
         resolve(data);
       }
     } catch (error) {
@@ -354,25 +389,6 @@ async function resizeImage(data, l) {
 /**met a jour les positions de l'objet dans leaflet de la ligne correspondante (mettre la ligne complète en parametre, après modifications de positions)*/
 async function updatePosOnLLObj(data){
   if(data.type == IMAGE){
-    //
-    /*const p1 = new V2F(- data.vTaille.x /2, - data.vTaille.y /2);
-    p1.po = data.vPos;
-    if(data.vAngle != null) p1.applyRotationDecalage(data.vAngle);
-    const p2 = new V2F(+ data.vTaille.x /2, - data.vTaille.y /2);
-    p2.po = data.vPos;
-    if(data.vAngle != null) p2.applyRotationDecalage(data.vAngle);
-    const p3 = new V2F(+ data.vTaille.x /2, + data.vTaille.y /2);
-    p3.po = data.vPos;
-    if(data.vAngle != null) p3.applyRotationDecalage(data.vAngle);
-    const p4 = new V2F(- data.vTaille.x /2, + data.vTaille.y /2);
-    p4.po = data.vPos;
-    if(data.vAngle != null) p4.applyRotationDecalage(data.vAngle);
-    //
-    data.vPos1 = p1;
-    data.vPos2 = p2;
-    data.vPos3 = p3;
-    data.vPos4 = p4;*/
-    //si image fixe
     if(data.vAngle == null) await data.objet.setBounds([[data.vPos1.yAbs(), data.vPos1.xAbs()], [data.vPos3.yAbs(), data.vPos3.xAbs()]]);//image select
     else await data.objet.reposition(toLLCoords(data.vPos4),toLLCoords(data.vPos3),toLLCoords(data.vPos1));
     if(data.objetVecteur != null) await data.objetVecteur.objet[0].setLatLngs([toLLTabl(data.objetVecteur.vPos),toLLTabl(data.objetVecteur.vPos2)]);
@@ -416,14 +432,12 @@ async function updatePosOnLLObj(data){
 }
 /**vérifie si un objet similaire éxiste dans l'écran*/
 async function objectPosInScreen(data) {
-     if(data.type == TILEMAP_DEFAULT)   return true;
-else if(data.type == IMAGE)             {
-  return (await leaflet.getMapBounds()).intersects([[toLLTabl(data.vPos3.pAbs())], [toLLTabl(data.vPos1.pAbs())]]);
-}
-else if(data.type == MARKER)            return (await leaflet.getMapBounds()).contains(toLLTabl(data.vPos));
-else if(data.type == MARKER_STATIC_MS)  return (await leaflet.getMapBounds()).contains([selectorPos.y, selectorPos.x])
-else if(data.type == POLYLIGNE)         return true;
-return false;
+        if(data.type == TILEMAP_DEFAULT)   return true;
+  else  if(data.type == IMAGE)             return (await leaflet.getMapBounds()).intersects([[toLLTabl(data.vPos3.pAbs())], [toLLTabl(data.vPos1.pAbs())]]);
+  else  if(data.type == MARKER)            return (await leaflet.getMapBounds()).contains(toLLTabl(data.vPos));
+  else  if(data.type == MARKER_STATIC_MS)  return (await leaflet.getMapBounds()).contains([selectorPos.y, selectorPos.x])
+  else  if(data.type == POLYLIGNE)         return true;
+  return false;
 }
 
 function toLLCoords(v2f){
@@ -439,4 +453,10 @@ function toLLTabl(v2f){
 }
 function toLLPoint(v2f){
   return L.point(v2f.x, v2f.y)
+}
+/**prend en parametre une data et traite l'objet, si detection de polyligne, renvoie l'objet 0 de la chaine, sinon son objet*/
+function dataToObject(data){
+  if(data == null) throw new Error("objet nul");
+  if(data.type == POLYLIGNE) return data.objet[0];
+  else return data.objet;
 }
