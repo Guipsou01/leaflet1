@@ -39,9 +39,7 @@ class GestionGoogle{
             if (!response.ok) throw new Error(`Erreur de requête Google sheets, réponse: ${response.status}`);
             this.#sheetNames = (await response.json()).sheets.map(sheet => sheet.properties.title);
             return this.#sheetNames;
-        } catch (error) {
-            console.log("Erreur dans le chargement google sheets, vérifier id de feuille");
-        }
+        } catch (error) { console.log("Erreur dans le chargement google sheets, vérifier id de feuille");}
     }
     /**modifie  et retourne la liste des onglets google, update sheetNameFocus et sheetNames*/
     async filterWithPrefixe(prefixe){
@@ -65,7 +63,8 @@ class GestionGoogle{
             var data = null;
             texteCharg.innerHTML = `Remplissage du contenu des liste Google: ${rg} / ${nbtot - 1}`;
             return new Promise((resolve) => {
-                var _plan = convertToFloat(lignes[COL_PLAN]);
+                var _plan = -1;
+                if(isFloatable(lignes[COL_PLAN])) _plan = convertToFloat(lignes[COL_PLAN]);
                 switch(lignes[COL_TYPE]){
                     case 'TILEMAP-DEFAULT':
                         data = createDataObjet(TILEMAP_DEFAULT);
@@ -85,8 +84,9 @@ class GestionGoogle{
                                 if(lignes[COL_PARENT] != "-") data.vOrigine = lignes[COL_PARENT];
                                 data.vPos = p;
                                 data.vTaille = l;
+                                data.vAngle = new V2F();
+                                data.vAngle.setAngle(0);
                                 data.url = lignes[COL_URL];
-                                data.desc = imgDesc;
                                 data.titre = imgDesc;
                                 resolve(data);
                             }
@@ -99,7 +99,8 @@ class GestionGoogle{
                             var a = null;
                             //imagePtee.crossOrigin = "anonymous";
                             //execute en tant que coin BG par defaut
-                            var angle = convertToFloat(lignes[COL_ANGLE]);
+                            var angle = null;
+                            if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
                             if(angle != null){
                                 a = new V2F(0,0);
                                 a.setAngle(angle);//angle degré en normale
@@ -210,6 +211,11 @@ class GestionGoogle{
                 if(objet != null && (data.type == IMAGE || data.type == MARKER || data.type == TEXTE)){
                     data.objetVecteur = await generateObject(createDataObjet(POLYLIGNE));//ligne vecteur
                     data.objetCarre = [await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE))];
+                    data.objetVecteur.titre += "[V]";
+                    data.objetCarre[0].titre += "[VC1]";
+                    data.objetCarre[1].titre += "[VC2]";
+                    data.objetCarre[2].titre += "[VC3]";
+                    data.objetCarre[3].titre += "[VC4]";
                 }
                 if(objet != null && data.type == IMAGE) {
                     //dataMipmap.vPos = data.vPos;//reappliquer les V2F non possible en clonage
@@ -222,7 +228,8 @@ class GestionGoogle{
                     dataMipmap.vImgTaille = data.vImgTaille;
                     dataMipmap.vTaille = data.vTaille;
                     dataMipmap.isMipmap = true;
-                    objet2 = await generateObject(dataMipmap);//creer obj mipmap
+                    dataMipmap.titre += "[MM]";
+                    await generateObject(dataMipmap);//creer obj mipmap
                     var mipmapKey = generateCleUnique();//creer cle
                     //lien
                     data.coupleMapLink = mipmapKey;
@@ -231,10 +238,17 @@ class GestionGoogle{
                     dataMipmap.objetCarre = data.objetCarre;
                 }
                 if(objet  == null)  {
-                //await objListLeaflet.push([[MARKER,null,false,1],0,["",new V2F(0,0)],[new V2F(10,10)],[unfound_img,"Image " + ligneptee[0][1] + " not found, check URL"]]);
+                    //await objListLeaflet.push([[MARKER,null,false,1],0,["",new V2F(0,0)],[new V2F(10,10)],[unfound_img,"Image " + ligneptee[0][1] + " not found, check URL"]]);
                 }
-                if(objet  != null)  await mapListLeaflet.set(generateCleUnique(), data);//image normale
-                if(objet2 != null)  await mapListLeaflet.set(mipmapKey, dataMipmap);//gestion mipmap
+                if(objet  != null)  {
+                    var objKey = generateCleUnique();
+                    data.key = objKey;
+                    await mapListLeaflet.set(objKey, data);//image normale
+                }
+                if(dataMipmap.objet != null)  {
+                    dataMipmap.key = mipmapKey;
+                    await mapListLeaflet.set(mipmapKey, dataMipmap);//gestion mipmap
+                }
                 return Promise.resolve();
             });
             await Promise.all(promesses);//Attendre que toutes les promesses soient terminées pour éxécuter la suite
@@ -286,7 +300,6 @@ class GestionGoogle{
             }
     
             const result = await response.json();
-            console.log("Nouvel onglet créé:", result);
             return result;
         } catch (error) {
             if (error.message.includes("401")) console.error("Erreur 401 : Assurez-vous que votre fichier Google Sheets est public ou utilisez OAuth pour l'authentification.");
