@@ -51,6 +51,9 @@ html, body {
 #btnCreditsId:hover {
     background-color: #ff7373;
 }
+#btnCreditsId:disabled {
+    background-color: #ff7373;
+}
 #fenetreCreditsId {
     display: none;
     position: fixed;
@@ -123,6 +126,9 @@ html, body {
 #btnVecteur:hover {
     background-color: #ff7373;
 }
+#btnVecteur:disabled {
+    background-color: #ff7373;
+}
 #btnSave {
     position: absolute;
     top: 140px;
@@ -138,6 +144,9 @@ html, body {
     cursor: pointer;
 }
 #btnSave:hover {
+    background-color: #ff7373;
+}
+#btnSave:disabled {
     background-color: #ff7373;
 }
 #btnMaps {
@@ -243,5 +252,11 @@ html, body {
     border-radius: 5px;
     cursor: pointer;
     z-index: 2000;
+}
+.item:hover {
+    background-color: #ff7373;
+}
+.item:disabled {
+    background-color: #ffc1c1;
 }
 
