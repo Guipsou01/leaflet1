@@ -20,4 +20,5 @@ window.onclick = function(event) {
 /**appui sur la croix de la fenetre modale */
 croixCredits.onclick = function() {
     fenetreModale.close();
+    activeAllButtons();
 }
