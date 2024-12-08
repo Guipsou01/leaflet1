@@ -37,12 +37,22 @@ function isTablContainElem(tabl, elem){
     for(i = 0; i < tabl.length; i++) if(tabl[i] == elem) return true;
     return false;
 }
+function isFloatable(nb){
+    if (nb == null || nb === '') return false;
+    nb = String(nb);
+    nb = nb.replace(/\s+/g, '').replace(',', '.'); 
+    const result = parseFloat(nb);
+    if(isNaN(result)) return false;
+    else return true;
+}
 /**convertis une donnée de string en float, retourne null si pas convertible*/
 function convertToFloat(nb){
+    if (nb == null || nb === '') return null;
     nb = String(nb);
-    nb = nb.replace(',','.');
-    if(isNaN(nb)) return null;
-    return parseFloat(nb);
+    nb = nb.replace(/\s+/g, '').replace(',', '.'); 
+    const result = parseFloat(nb);
+    if(isNaN(result)) throw new Error("conversion en float échouée: " + result);
+    return result;
 };
 //hitbox de détection
 /**detecte la présence d'un point dans un carré */
@@ -61,3 +71,17 @@ function dot(gauche, p, p1, p2){
     if(gauche) return ((p2.x - p1.x) * (p.y - p1.y) - (p.x - p1.x) * (p2.y - p1.y) < 0);
     else return ((p2.x - p1.x) * (p.y - p1.y) - (p.x - p1.x) * (p2.y - p1.y) > 0);
 }
+
+  /**test si un objet similaire éxiste dans la map, prend un objet en parametre*/
+function ifObjExist(map, obj){
+    try{
+      var retour = false;
+      map.eachLayer((layer) => {
+        if(layer == obj) retour = true;
+      });
+      return  retour;
+    } catch(error) {
+      console.error("Erreur dans l'insertion d'objet leaflet");
+      throw error;
+    }
+  }
