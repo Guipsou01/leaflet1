@@ -2,9 +2,10 @@
 class V2F{
     #x = 0;
     #y = 0;
-    #po = null;//another V2F reference as origin
+    #po = null;//un autre V2F en point de référence d'origine (v2f parent)
+    #pe = [];//points de références ayant pour origine ce vecteur (V2F enfants)
+    pt = null;//vecteur de transformation, enregistre des valeurs d'angle et d'échelle locale, facultatif
     #data = null;//objet de référence lié au vecteur, facultatif, sert pour retrouver un objet depuis le réseau de vecteur
-    #pe = [];//V2F enfants
     constructor(x = 0,y = 0){
         this.#x = x,
         this.#y = y;
@@ -21,6 +22,7 @@ class V2F{
     get po(){
         return this.getPo();
     }
+    /**retourne les éventuelles v2f enfants, retourne un tableau vide si rien trouvé*/
     get pe(){
         return this.#pe;
     }
@@ -77,19 +79,45 @@ class V2F{
         this.y += v2f.y;
         return this;//chainage
     }
+    /**applique des valeurs x et y au vecteur, remplace les anciennes*/
     addXY(x,y){
         if (typeof x !== "number" || typeof y !== "number") throw new Error("Les coordonnées x et y doivent être des nombres.");
         this.x += x;
         this.y += y;
         return this;//chainage
     };
-    /**retourne le point absolu du vecteur [noPt]*/
-    pAbs() {
+    pAbsProcess(angleLoc){
         if(this.#po == null) return new V2F(this.#x,this.#y);
         else {
-            const originAbs = this.#po.pAbs(); 
-            return originAbs.addXY(this.#x, this.#y);
+            var posAbs;
+            var posAbs2 = new V2F(0,0);
+            posAbs2.setXY(this.#x, this.#y);
+            if(this.#po.pt != null) posAbs2.applyRotationDecalage(this.#po.ptAbs());
+            posAbs = this.#po.pAbsProcess(0); 
+            var retour = posAbs.addV(posAbs2);
+            return retour;
         }
+    }
+    ptAbs(){
+        var ptAbs = new V2F(0,0);
+        ptAbs.setAngle(0);
+        if(this.#po != null) ptAbs.applyRotationDecalage(this.#po.ptAbs());
+        if(this.pt != null) ptAbs.applyRotationDecalage(this.pt);
+        return ptAbs;
+        /*if(this.#po == null) {
+            if(this.pt != null) return this.pt;
+            else return new V2F(0,0).setAngle(0);
+        }
+        else {
+            //var ptAbs = this.#po.ptAbs();
+            //ptAbs.applyRotationDecalage(this.pt);
+            //return ptAbs;
+            return new V2F(0,0).setAngle(30);
+        }*/
+    }
+    /**retourne le point absolu du vecteur [noPt]*/
+    pAbs() {
+        return (this.pAbsProcess(0));
     }
     /**retourne la position absolue de x*/
     xAbs() {
@@ -106,13 +134,14 @@ class V2F{
         this.y = v2f.y;
         return this;//chainage
     }
-    //empeiche les actions circulaires
+    /**empeiche les actions circulaires*/
     #detectCircularite(p1){
         while (p1 !== null) {
             if (p1 === this) throw new Error("Une origine circulaire a été détectée.");
             p1 = p1.getPo3(); //Remonte les origines
         }
     }
+    /**x*/
     toTxt(){
         var txt = "[" + this.#x + ":" + this.#y + "_REF=" + this.getPo2().x + ":" + this.getPo2().y +"]";
         return txt
@@ -176,26 +205,30 @@ class V2F{
         this.x *= val;
         this.y *= val;
     }
+    /**retourne le nombre de parents */
     nbParents(){
         return this.#pe.length;
     }
+    /**applique un objet lié au vecteur*/
     setData(val){
         this.#data = val;
     }
-    /*retourne les objets de chaque vecteur sous forme de liste*/
+    /*retourne les objets liés de chaque vecteur sous forme de liste*/
     getData(){
         var liste = [];
         liste.push(this.#data);
         for(var i = 0; i < this.#pe.length; i++){
             if(liste.length > 1000000) throw new Error("impossible de lire une famille de plus de 1000000 éléments");
-            if(this.#pe[i] != null) {
-                liste.push(...this.#pe[i].getData());
-            }
+            if(this.#pe[i] != null) liste.push(...this.#pe[i].getData());
         }
         if(liste.length == 0){
             console.log("liste vide");
             return null;
         }
         else return liste;
+    }
+    /**enregistre le vecteur en parametre en tant que vecteur de transformation (sert pour les calculs de position absolue)*/
+    setTransfo(v2f){
+        this.pt = v2f;
     }
 }
