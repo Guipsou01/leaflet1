@@ -16,9 +16,11 @@ class GestionGoogle{
     #apiKey = null;
     #sheetNames = null;//nom des onglets
     constructor(){};
+    /**retourne l'id du document google sheet visé, retourne null si non renseigné*/
     getSpreadsheetId(ssid){
         this.#spreadsheetId = ssid;
     }
+    /**retourne la valeur de la clé api stockée, retourne null si non renseigné*/
     getApiKey(apik){
         this.#apiKey = apik;
     }
@@ -58,10 +60,9 @@ class GestionGoogle{
         return true;
     }
     /**Lecture tableau google et retour de data*/
-    async #traitementLigneGoogle(lignes, rg, nbtot){
+    async #traitementLigneGoogle(lignes){
         try{
             var data = null;
-            texteCharg.innerHTML = `Remplissage du contenu des liste Google: ${rg} / ${nbtot - 1}`;
             return new Promise((resolve) => {
                 var _plan = -1;
                 if(isFloatable(lignes[COL_PLAN])) _plan = convertToFloat(lignes[COL_PLAN]);
@@ -74,6 +75,13 @@ class GestionGoogle{
                             const imagePtee = new Image();
                             const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
                             const l = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
+                            var a = null;
+                            var angle = null;
+                            if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
+                            if(angle != null){
+                                a = new V2F(0,0);
+                                a.setAngle(angle);//angle degré en normale
+                            }
                             var imgDesc = lignes[COL_TITLE];
                             imagePtee.src = lignes[COL_URL];
                             imagePtee.onload = async function() {
@@ -84,8 +92,7 @@ class GestionGoogle{
                                 if(lignes[COL_PARENT] != "-") data.vOrigine = lignes[COL_PARENT];
                                 data.vPos = p;
                                 data.vTaille = l;
-                                data.vAngle = new V2F();
-                                data.vAngle.setAngle(0);
+                                if(a != null) data.vAngle = a;
                                 data.url = lignes[COL_URL];
                                 data.titre = imgDesc;
                                 resolve(data);
@@ -96,37 +103,33 @@ class GestionGoogle{
                             const imagePtee = new Image();
                             const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
                             const l = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
-                            var a = null;
+                            var angle = null;
                             //imagePtee.crossOrigin = "anonymous";
                             //execute en tant que coin BG par defaut
-                            var angle = null;
                             if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
-                            if(angle != null){
-                                a = new V2F(0,0);
-                                a.setAngle(angle);//angle degré en normale
-                            }
                             imagePtee.src = lignes[COL_URL];
                             imagePtee.onload = async function() {
                                 const imgL = new V2F(imagePtee.width,imagePtee.height);
                                 l.y = imgL.y / imgL.x * l.x;
                                 //var tabl = await getPosApresRotation(p,l,a);
                                 //var tabl = await getPosApresRotation(p,l,a.getAngle());
-                                const p1 = new V2F(-l.x/2, -l.y/2);
-                                p1.po = p;
-                                if(a != null) p1.applyRotationDecalage(a);
-                                const p2 = new V2F(+l.x/2, -l.y/2);
-                                p2.po = p;
-                                if(a != null) p2.applyRotationDecalage(a);
-                                const p3 = new V2F(+l.x/2, +l.y/2);
-                                p3.po = p;
-                                if(a != null) p3.applyRotationDecalage(a);
-                                const p4 = new V2F(-l.x/2, +l.y/2);
-                                p4.po = p;
-                                if(a != null) p4.applyRotationDecalage(a);
                                 data = createDataObjet(IMAGE);
                                 data.plan = _plan;
                                 if(lignes[COL_PARENT] != "-") data.vOrigine = lignes[COL_PARENT];
-                                if(a != null) data.vAngle = a;
+                                if(angle != null) {
+                                    data.vAngle = new V2F(0,0);
+                                    data.vAngle.setAngle(angle);
+                                }
+                                //
+                                const p1 = new V2F(-l.x/2, -l.y/2);
+                                p1.po = p;
+                                const p2 = new V2F(+l.x/2, -l.y/2);
+                                p2.po = p;
+                                const p3 = new V2F(+l.x/2, +l.y/2);
+                                p3.po = p;
+                                const p4 = new V2F(-l.x/2, +l.y/2);
+                                p4.po = p;
+                                //
                                 data.vPos = p;
                                 data.vPos1 = p1;
                                 data.vPos2 = p2;
@@ -151,33 +154,31 @@ class GestionGoogle{
                         resolve(null);
                     break; case 'TEXT':
                         (async function(){
-                            const p = new V2F(0,0);
+                            const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
                             const l = new V2F(lignes[COL_LX], lignes[COL_LX] / lignes[COL_TITLE].length * 2);
+                            var angle = null;
+                            if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
                             //Convertir le texte en image
                             var textImageUrl = textToImage(lignes[COL_TITLE], 40 * lignes[COL_TITLE].length / 2, 40);//pas ici
                             //Définir les coordonnées pour l'image sur la carte
-                            p.x = convertToFloat(lignes[COL_X]);
-                            p.y = convertToFloat(lignes[COL_Y]);
                             data = createDataObjet(IMAGE);
                             data.type = TEXTE;
                             data.plan = _plan;
-                            data.vPos = p;
-                            data.vAngle = new V2F(0,0);
-                            data.vAngle.setAngle(convertToFloat(lignes[COL_ANGLE]));
+                            if(angle != null) {
+                                data.vAngle = new V2F(0,0);
+                                data.vAngle.setAngle(angle);
+                            }
                             //
                             const p1 = new V2F(-l.x/2, -l.y/2);
                             p1.po = p;
-                            p1.applyRotationDecalage(data.vAngle);
                             const p2 = new V2F(+l.x/2, -l.y/2);
                             p2.po = p;
-                            p2.applyRotationDecalage(data.vAngle);
                             const p3 = new V2F(+l.x/2, +l.y/2);
                             p3.po = p;
-                            p3.applyRotationDecalage(data.vAngle);
                             const p4 = new V2F(-l.x/2, +l.y/2);
                             p4.po = p;
-                            p4.applyRotationDecalage(data.vAngle);
                             //
+                            data.vPos = p;
                             data.vPos1 = p1;
                             data.vPos2 = p2;
                             data.vPos3 = p3;
@@ -198,119 +199,52 @@ class GestionGoogle{
         }
         catch (error) {console.error("Erreur dans le chargement de marqueur:", error);resolve(null);}
     }
-    /**traitement des commandes simplifiées et remplissage de la liste Leaflet */
-    async #traitementLigneGoogleSimplifiee(map){
+    /**lis le contenu de l'onglet visé et remplis la map en parametre*/
+    async lecture(map){
         try{
-            const promesses = Array.from(map.entries()).map(async ([key, data], rang) => {//traiter toute les lignes en meme temps...
-                var objet = null;
-                var objet2 = null;
-                var dataMipmap = null;
-                texteCharg.innerHTML = `Remplissage du contenu des listes Leaflet`;
-                dataMipmap = await structuredClone(data);
-                objet = await generateObject(data);
-                if(objet != null && (data.type == IMAGE || data.type == MARKER || data.type == TEXTE)){
-                    data.objetVecteur = await generateObject(createDataObjet(POLYLIGNE));//ligne vecteur
-                    data.objetCarre = [await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE))];
-                    data.objetVecteur.titre += "[V]";
-                    data.objetCarre[0].titre += "[VC1]";
-                    data.objetCarre[1].titre += "[VC2]";
-                    data.objetCarre[2].titre += "[VC3]";
-                    data.objetCarre[3].titre += "[VC4]";
+            var cpt = 0;
+            var donneesGoogleUnOnglet = await this.getContenuTableau(sheetNameFocus);
+            var mapListGoogle = new Map();//liste de tous les objets de la liste google (comprend les fonctions dans leur état le plus simple)
+            const promesses1 = donneesGoogleUnOnglet.map(async (donnee, i) => {
+                const data = await this.#traitementLigneGoogle(donnee);
+                if(data != null) {
+                    mapListGoogle.set(generateCleUnique(), data);
+                    cpt++;
+                    await mainTxt(`Remplissage du contenu des liste Google: ${cpt} / ${donneesGoogleUnOnglet.length - 1}`);
                 }
-                if(objet != null && data.type == IMAGE) {
-                    //dataMipmap.vPos = data.vPos;//reappliquer les V2F non possible en clonage
-                    dataMipmap.vPos = new V2F(0,0);
-                    dataMipmap.vAngle = data.vAngle;
-                    dataMipmap.vPos1 = data.vPos1;
-                    dataMipmap.vPos2 = data.vPos2;
-                    dataMipmap.vPos3 = data.vPos3;
-                    dataMipmap.vPos4 = data.vPos4;
-                    dataMipmap.vImgTaille = data.vImgTaille;
-                    dataMipmap.vTaille = data.vTaille;
-                    dataMipmap.isMipmap = true;
-                    dataMipmap.titre += "[MM]";
-                    await generateObject(dataMipmap);//creer obj mipmap
-                    var mipmapKey = generateCleUnique();//creer cle
-                    //lien
-                    data.coupleMapLink = mipmapKey;
-                    dataMipmap.coupleMapLink = key;
-                    dataMipmap.objetVecteur = data.objetVecteur;
-                    dataMipmap.objetCarre = data.objetCarre;
-                }
-                if(objet  == null)  {
-                    //await objListLeaflet.push([[MARKER,null,false,1],0,["",new V2F(0,0)],[new V2F(10,10)],[unfound_img,"Image " + ligneptee[0][1] + " not found, check URL"]]);
-                }
-                if(objet  != null)  {
-                    var objKey = generateCleUnique();
-                    data.key = objKey;
-                    await mapListLeaflet.set(objKey, data);//image normale
-                }
-                if(dataMipmap.objet != null)  {
-                    dataMipmap.key = mipmapKey;
-                    await mapListLeaflet.set(mipmapKey, dataMipmap);//gestion mipmap
-                }
-                return Promise.resolve();
             });
-            await Promise.all(promesses);//Attendre que toutes les promesses soient terminées pour éxécuter la suite
+            await Promise.all(promesses1);
+            await mainTxt("Remplissage du contenu des listes Leaflet...");
+            //await checkDoublon();
+            //traitement des commandes simplifiées et remplissage de la liste Leaflet
+            cpt = 0;
+            const promesses2 = Array.from(mapListGoogle.entries()).map(async ([key, data], rang) => {//traiter toute les lignes en meme temps...
+                var retour = await traitement2(data);
+                if(retour != null){
+                    if(retour[0] != null)  map.set(retour[0].key, retour[0]);//image normale
+                    if(retour[1] != null)  map.set(retour[1].key, retour[1]);//gestion mipmap
+                    cpt++;
+                    await mainTxt(`Remplissage du contenu des listes Leaflet: ${cpt} / ${mapListGoogle.size - 1}`);
+                }
+            });
+            await Promise.all(promesses2);//Attendre que toutes les promesses soient terminées pour éxécuter la suite
+            await refreshEcran();
+            await mapListGoogle.clear();
+            await refreshEcran();
         } catch (error) {console.error("Error:", error);}
+        //nettoyage
     }
-    /**lis le contenu de l'onglet visé et remplis la liste d'actions leaflet*/
-    async lecture(){
-        var donneesGoogleUnOnglet = await this.getContenuTableau(sheetNameFocus);
-        var mapListGoogle = new Map();//liste de tous les objets de la liste google (comprend les fonctions dans leur état le plus simple)
-        const promesses = donneesGoogleUnOnglet.map(async (donnee, i) => {
-            const data = await this.#traitementLigneGoogle(donnee, i, donneesGoogleUnOnglet.length);
-            if(data != null) mapListGoogle.set(generateCleUnique(), data);
-        });
-        await Promise.all(promesses);
-        //await checkDoublon();
-        texteCharg.innerHTML = "Remplissage du contenu des listes Leaflet...";
-        await this.#traitementLigneGoogleSimplifiee(mapListGoogle);
-        mapListGoogle.clear();
-    }
-    async ecriture(){
+    /*async ecriture(map){
         //await this.generateOnglet("OUTPUT");
-        return await this.generateList();
-    }
-    async generateOnglet(titre){
-        if(this.#spreadsheetId == null || this.#apiKey == null) throw new Error("identification incomplete: " + this.#spreadsheetId + " , " + this.#apiKey);
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.#spreadsheetId}:batchUpdate?key=${this.#apiKey}`;
-        const requestBody = {
-            requests: [
-                {
-                    addSheet: {
-                        properties: {
-                            title: titre, // Nom du nouvel onglet
-                        },
-                    },
-                },
-            ],
-        };
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            });
-    
-            if (!response.ok) {
-                throw new Error(`Erreur: ${response.status} ${response.statusText}`);
-            }
-    
-            const result = await response.json();
-            return result;
-        } catch (error) {
-            if (error.message.includes("401")) console.error("Erreur 401 : Assurez-vous que votre fichier Google Sheets est public ou utilisez OAuth pour l'authentification.");
-            else console.error("Erreur lors de la création de l'onglet:", error.message || error);
-        }
-    }
-    async generateList(){
+        //return await this.generateList(map);
+    }*/
+    //async generateOnglet(titre){}
+    /**retourne un string contenant la map en parametre en formatage google sheets*/
+    async generateList(map){
         var cs = "</td><td>";//saut de case
         var ln = "<br>";//saut de ligne
         var text = `<p style="font-size: 4px;"><table><tbody>-<br>`;
-        mapListLeaflet.forEach((value, key) => {
+        map.forEach((value, key) => {
             var s = ["-","-","-","-","-","-","-","-","-","-","-","-"];
             var next = false;
             if(value.type == IMAGE) if(value.isMipmap == true) next = true;
@@ -328,7 +262,7 @@ class GestionGoogle{
                     s[COL_SITE] = value.site;
                 }
                 else if(value.type == TEXTE) {
-                    s[COL_TYPE] = "TEXTE";
+                    s[COL_TYPE] = "TEXT";
                 }
                 else if(value.type == POLYLIGNE) {
                     s[COL_TYPE] = "POLYLIGNE";
@@ -338,9 +272,9 @@ class GestionGoogle{
                     s[COL_Y] = value.vPos.y;
                     s[COL_LX] = value.vTaille.x;
                     s[COL_PARENT] = value.vOrigine;
+                    s[COL_TITLE] = value.titre;
                     if(value.vAngle != null) s[COL_ANGLE] = value.vAngle.getAngle();
                     if(value.type != TEXTE) s[COL_URL] = value.url;
-                    s[COL_TITLE] = value.titre;
                 }
                 s[COL_PLAN] = value.plan;
                 text += ("<tr><td>" + s[0] + cs + s[1] + cs + s[2] + cs + s[3] + cs + s[4] + cs + s[5] + cs + s[6] + cs + s[7] + cs + s[8] + cs + s[9] + cs + s[10] + cs + s[11] + "</td></tr>");
