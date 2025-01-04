@@ -8,22 +8,25 @@ class hudButton1{
         /**appui sur le bouton editeur*/
         this.#btn.onclick = () => {
             if(mode == MODE_LECTURE) {
-            mode = MODE_DEPLACEMENT;
-            this.#btnContent.textContent = "Editor (move)";
+                mode = MODE_DEPLACEMENT;
+                this.#btnContent.textContent = "Editor (move)";
             }
             else if(mode == MODE_DEPLACEMENT) {
-            mode = MODE_ROTATION;
-            this.#btnContent.textContent = "Editor (rotation)";
+                mode = MODE_ROTATION;
+                this.#btnContent.textContent = "Editor (rotation)";
             }
             else if(mode == MODE_ROTATION) {
-            mode = MODE_ECHELLE;
-            this.#btnContent.textContent = "Editor (scale)";
+                mode = MODE_ECHELLE;
+                this.#btnContent.textContent = "Editor (scale)";
             }
             else if(mode == MODE_ECHELLE) {
-            mode = MODE_LECTURE;
-            this.#btnContent.textContent = "Editor (off)";
+                mode = MODE_LECTURE;
+                this.#btnContent.textContent = "Editor (off)";
             }
-            mush.action();
+            leaflet.closePopup();
+            mush.updateTracageMarkers();
+            //actualiseMap(mapListLeaflet, false);
+            actualiseMap(leaflet.getMap(), true);
         }
     }
     setText(txt){
@@ -47,14 +50,15 @@ class hudButton2{
         /**appui sur le bouton vecteur */
         this.#btn.onclick = () => {
             if(vecteurVisu == false) {
-            vecteurVisu = true;
-            this.#btnContent.textContent = "Parent (on)";
+                vecteurVisu = true;
+                this.#btnContent.textContent = "Parent (on)";
             }
-            else if(vecteurVisu == true){
-            vecteurVisu = false;
-            this.#btnContent.textContent = "Parent (off)";
+                else if(vecteurVisu == true){
+                vecteurVisu = false;
+                this.#btnContent.textContent = "Parent (off)";
             }
             leaflet.actualiseMapTracee();
+            //actualiseMap(mapListLeaflet, false);
         }
     }
     setText(txt){
@@ -104,19 +108,18 @@ class hudList{
             return;
         }
         this.#btnMapsList.innerHTML = '';//Nettoie les anciennes options
-        
         liste.forEach(option => {
             const link = document.createElement('a');
             link.href = "#";
             link.textContent = option;
             //
             link.addEventListener('click', (event) => {
-              event.preventDefault(); //Empêche le comportement par défaut du lien
-              this.setText(option);
-              this.#btnMapsList.style.display = 'none'; //Masquer la liste après sélection
-              //
-              if (typeof sheetNameFocus !== 'undefined') sheetNameFocus = option;
-              resetAllMapContent();
+                event.preventDefault(); //Empêche le comportement par défaut du lien
+                this.setText(option);
+                this.#btnMapsList.style.display = 'none'; //Masquer la liste après sélection
+                //
+                if (typeof sheetNameFocus !== 'undefined') sheetNameFocus = option;
+                resetAllMapContent();
             });
             this.#btnMapsList.appendChild(link); //Ajouter le lien à la liste
         });
