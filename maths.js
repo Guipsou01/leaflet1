@@ -30,15 +30,16 @@ function generateCleUnique(){
 }
 /**trace un objet de type map Javascript*/
 async function traceMap(map){
-    for (const [key, value] of map) console.log("trace objet de map: ", value);
+    for(const [key, value] of map) console.log("trace objet de map: ", value.titre);
 }
 /**retourne true si le tableau contient l'élément donné*/
 function isTablContainElem(tabl, elem){
     for(i = 0; i < tabl.length; i++) if(tabl[i] == elem) return true;
     return false;
 }
+/**retourne truc si l'objet est convertissable en float */
 function isFloatable(nb){
-    if (nb == null || nb === '') return false;
+    if(nb == null || nb === '') return false;
     nb = String(nb);
     nb = nb.replace(/\s+/g, '').replace(',', '.'); 
     const result = parseFloat(nb);
@@ -47,7 +48,7 @@ function isFloatable(nb){
 }
 /**convertis une donnée de string en float, retourne null si pas convertible*/
 function convertToFloat(nb){
-    if (nb == null || nb === '') return null;
+    if(nb == null || nb === '') return null;
     nb = String(nb);
     nb = nb.replace(/\s+/g, '').replace(',', '.'); 
     const result = parseFloat(nb);
@@ -59,29 +60,15 @@ function convertToFloat(nb){
 function pointDansCarre(p,p1,p2,p3,p4){
     return (pointDansTriangle(p, p1, p2, p3) || pointDansTriangle(p, p1, p3, p4));
 }
-  /**détecte la présence d'un point dans un triangle */
+/**détecte la présence d'un point dans un triangle */
 function pointDansTriangle(p, p1, p2, p3){
     if(dot(false, p, p1, p2)
     && dot(false, p, p2, p3)
     && dot(false, p, p3, p1)) return true;
     return false;
-  }
-  /**fonction math dot */
+}
+/**fonction math dot */
 function dot(gauche, p, p1, p2){
     if(gauche) return ((p2.x - p1.x) * (p.y - p1.y) - (p.x - p1.x) * (p2.y - p1.y) < 0);
     else return ((p2.x - p1.x) * (p.y - p1.y) - (p.x - p1.x) * (p2.y - p1.y) > 0);
 }
-
-  /**test si un objet similaire éxiste dans la map, prend un objet en parametre*/
-function ifObjExist(map, obj){
-    try{
-      var retour = false;
-      map.eachLayer((layer) => {
-        if(layer == obj) retour = true;
-      });
-      return  retour;
-    } catch(error) {
-      console.error("Erreur dans l'insertion d'objet leaflet");
-      throw error;
-    }
-  }
