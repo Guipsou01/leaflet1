@@ -13,7 +13,11 @@ var texteCharg = 0;
 var contentCredits;
 var vecteurVisu = false;
 var limiteMarkercpt = 0;
-const limiteMarker = 500; //limite d'affichage de markers en meme temps
+var firstAction = true;
+var holdInterval = null;
+//const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
+//const limiteMarker = 1;
+const limiteMarker = 100; //limite d'affichage de markers en meme temps// -1 = tous
 const btnEditor = new hudButton1(document.getElementById("btnEditor"), document.getElementById("btnEditorContent"));
 const btnVecteur = new hudButton2(document.getElementById("btnVecteur"), document.getElementById("btnVecteurContent"));
 const btnListMaps = new hudList(document.getElementById('btnMaps'), document.getElementById('btnMapsList'));
@@ -27,6 +31,19 @@ const MODE_DEPLACEMENT = 1;
 const MODE_ROTATION = 2;
 const MODE_ECHELLE = 3;
 const MODE_INSERTION = 4;
+
+const cliqueSurSlotListe1 = (liste, id, item) => {
+  item.disabled = true;
+  mode = MODE_INSERTION;
+  btnEditorContent.textContent = "Insertion";
+  btnEditor.disable();
+  //creation objet
+  createMarker((liste[0][1]), (liste[0][5]));
+  actionEnCours = ACTDEPLACEMENT;
+  //lancement boucle d'insertion
+  holdInterval = setInterval(() => {spam();}, 10);//verifie toute les 100ms
+  //mush.active();
+};
 
 var mode = MODE_LECTURE;
 
@@ -47,8 +64,8 @@ const leaflet = new LeafletMap();
 /**fonction d'initialisation principale du programme */
 async function corps(){
   disableAllbuttons();
-  //var ssId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; //Mario Games / Maps / Locations
-  var ssId = '1ZAvRc7k-sphLJzj01WYmweG17yX49qNy542Kzkr01So'; //MARIO MAP TEST
+  var ssId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; //Mario Games / Maps / Locations
+  //var ssId = '1ZAvRc7k-sphLJzj01WYmweG17yX49qNy542Kzkr01So'; //MARIO MAP TEST
   var apik = 'AIzaSyCTYinHSnmthpQKkNeRcNMnyk1a8lTyzaA';
   //FICHIER REGROUPANT LES FONCTIONS GENERALES AU PROGRAMME
   google.getSpreadsheetId(ssId);
@@ -75,6 +92,7 @@ async function corps(){
   `;
   btnVecteur.setText("Parent (off)");
   btnListLocations.setName("Locations List");
+  btnListLocations.setFunctionOnClick(cliqueSurSlotListe1);
   texteCharg = document.getElementById('texteInfo');
   //console.log("[initialisation] Démarrage");
   texteCharg.innerHTML = "Démarrage";
@@ -94,52 +112,50 @@ async function corps(){
   if(isTablContainElem(sheetNamesLocations,"Locations")) await remplissageLocations();
   await btnListLocations.createSelector();
   //console.log("[initialisation] Init sélecteur...");
-  texteCharg.innerHTML = "Initialisation sélecteur...";
+  mainTxt("Initialisation sélecteur...");
   await createSelectorMaps();
   resetAllMapContent();
 }
 /**réinitialise le contenu général de la carte + interface */
 async function resetAllMapContent(){
   try{
-    disableAllbuttons();
+    await disableAllbuttons();
     mapListLeaflet.clear();
     //desactivation bouton reset
     actionEnCours = ACTNULL;
     mode = MODE_LECTURE;
     btnEditor.setText("Editor (off)");
     //récupération des données de la feuille google visée
-    if(cleImageFocus != null) await mush.reset();
+    await mush.reset();
     if(await google.getNomFeuillesSansRequette() == null){
-      texteCharg.innerHTML = "No Google Table found, check table id and permission";
+      await mainTxt("No Google Table found, check table id and permission");
       return;
     }
     if(!await google.isListeFeuillesOk()) {
-      texteCharg.innerHTML = "No tab found on the Google Table, check name and header (Leaflet_xxx needed)";
+      await mainTxt("No tab found on the Google Table, check name and header (Leaflet_xxx needed)");
       return;
     }
-    texteCharg.innerHTML = "Suppression de tous les objets de la carte...";
-    leaflet.removeAllObj(true);
-    texteCharg.innerHTML = "Suppression du contenu des listes Leaflet...";
+    await mainTxt("Suppression de tous les objets de la carte...");
+    await leaflet.removeAllObj(true);
+    await mainTxt("Suppression du contenu des listes Leaflet...");
     objListLeaflet = [];
-    texteCharg.innerHTML = "Remplissage du contenu des listes Google...";
-    await google.lecture();
+    await mainTxt("Remplissage du contenu des listes Google...");
+    await google.lecture(mapListLeaflet);
     //traceListeLeaflet();
-    texteCharg.innerHTML = "Initialisation des données du Mushroom selector...";
+    await mainTxt("Initialisation des données du Mushroom selector...");
     await mush.init();
-    texteCharg.innerHTML = "Suppression du contenu des listes Google...";
-    texteCharg.innerHTML = "Actualisation des données de la carte...";
-    await linkObjects();
-    console.log("a");
+    await mainTxt("Actualisation des données de la carte...");
+    await linkObjects(mapListLeaflet);
+    await mainTxt("Suppression du contenu des listes Google...");
     await leaflet.removeAllObj(false);
     await actualiseMap(mapListLeaflet, true);
-    console.log("[initialisation] Initialisation terminée...");
-    texteCharg.innerHTML = "Initialisation terminée...";
-    texteCharg.innerHTML = "";
-    mush.active();
-    leaflet.stats();
-    checkDoublon();
-    btnListLocations.setName("Locations List (" + compareMapListLocations() + " / " + mapListLocations.length + ")");
-    btnListLocations.setListe(mapListLocations);
+    await mainTxt("Initialisation terminée...");
+    await mainTxt("");
+    await mush.active();
+    //leaflet.stats();
+    await checkDoublon(mapListLeaflet);
+    //btnListLocations.setName("Locations List (" + await compareMapListLocations() + " / " + mapListLocations.length + ")");
+    btnListLocations.setListe(mapListLocations,1);
     btnListLocations.update();
     activeAllButtons();
   } catch (error) {console.error("Error:", error);}
@@ -156,6 +172,7 @@ async function calculTracabilite(data, limite) {
       break; case MARKER:
         //if(leaflet.getZoomLvl() >= 8) nvEtat = imagePosInScreenVar_;
         //else nvEtat = false;
+        if(limiteMarker == -1) limite = false;
         if(limite){
           if(limiteMarkercpt <= limiteMarker) nvEtat = imagePosInScreenVar_;
           else nvEtat = false;
@@ -164,64 +181,66 @@ async function calculTracabilite(data, limite) {
         //nvEtat = imagePosInScreenVar_;
         if(limite) if(nvEtat == true) limiteMarkercpt++;
       break; case IMAGE:
-        var isMipmap = data.isMipmap;
-        if(imagePosInScreenVar_ && !isMipmap) nvEtat = !isTooShort_;
-        else if(imagePosInScreenVar_ && isMipmap) nvEtat = isTooShort_;
+        if(imagePosInScreenVar_ && !data.isMipmap) nvEtat = !isTooShort_;
+        else if(imagePosInScreenVar_ && data.isMipmap) nvEtat = isTooShort_;
         else if(!imagePosInScreenVar_) nvEtat = false;
       break; case MARKER_STATIC_MS:
         //géré directement par mushroomselector ?
-        if(!imagePosInScreenVar_ && nvEtat) await mush.reset();
+        //if(!imagePosInScreenVar_ && nvEtat) await mush.reset();
       break; case TEXTE:
         nvEtat = true;
       break; case POLYLIGNE:
-        //nvEtat = vecteurVisu;
+        //nvEtat = etatVecteur;
       break; default:
         console.error(`Type non géré: ${data.type}`);
       break;
     }
     data.actif = nvEtat;
-    //if(data.objetVecteur != null) console.log(data.objetVecteur.actif);
-    if(data.objetVecteur != null) data.objetVecteur.actif = (data.actif && vecteurVisu);
-    if(data.objetCarre != null){
-      data.objetCarre[0].actif = (data.actif && vecteurVisu);
-      data.objetCarre[1].actif = (data.actif && vecteurVisu);
-      data.objetCarre[2].actif = (data.actif && vecteurVisu);
-      data.objetCarre[3].actif = (data.actif && vecteurVisu);
-    }
+    //var etatVecteur = data.actif && vecteurVisu;
+    var etatVecteur = false;
+    if(data.type == MARKER && limite) etatVecteur = vecteurVisu && data.actif;
+    else etatVecteur = vecteurVisu;
+    //if(data.type == IMAGE) etatVecteur = (etatVecteur || (mapListLeaflet.get(data.coupleMapLink).actif));
+    if(data.objetVecteur != null) data.objetVecteur.actif = etatVecteur;
+    if(data.objetCarre != null) for(var i = 0; i < data.objetCarre.length; i++) data.objetCarre[i].actif = etatVecteur;
   } catch (error) {console.error("Error:", error);}
 }
 //============LEAFLETLIST==============
 //=========GOOGLE=========
-/**supprime tout les éléments d'une carte, vérifie le tracage de nouveaux éléments et les insère dans la carte*/
+/**supprime tout les éléments, vérifie le tracage de nouveaux éléments d'une map en parametre et les insère dans leaflet*/
 async function actualiseMap(mapobj, limite){
   try{
     limiteMarkercpt = 0;
-    if (!mapobj || typeof mapobj[Symbol.iterator] !== 'function') {
+    if(!mapobj || typeof mapobj[Symbol.iterator] !== 'function') {
       console.log("mapobj :", mapobj);
       throw new TypeError("mapobj n'est pas un itérable valide.");
     }
-    for (const [key, value] of mapobj) await updatePosOnLLObj(value);
-    for (const [key, value] of mapobj) await calculTracabilite(value, limite);
-    for (const [key, value] of mapobj) await leaflet.updateObj(value);
+    for(const [key, value] of mapobj) await updatePosOnLLObj(value);
+    for(const [key, value] of mapobj) await calculTracabilite(value, limite);
+    for(const [key, value] of mapobj) await leaflet.updateObj(value);
+    //
+    await mush.updatePos();
+    //
+    await checkDoublon(mapobj);
     //stats();
   } catch(error) {
     console.error("Erreur dans l'actualisation de map");
     throw error;
   }
 }
-async function linkObjects(){
+/**créé les dépendances entre chaque objet de la map en parametre*/
+async function linkObjects(map){
   try{
     var actuVecteur = false;
-    for (const [key, dataaModif] of mapListLeaflet) {
+    for(const [key, dataaModif] of map) {
       actuVecteur = true;
       if(dataaModif.type == TILEMAP_DEFAULT || dataaModif.type == MARKER_STATIC_MS || dataaModif.type == POLYLIGNE) actuVecteur = false;
       if(dataaModif.type == IMAGE) if(dataaModif.isMipmap) actuVecteur = false;
       //traitement parente
-      if(actuVecteur == true){//actualiser les infos de vecteur et de cadre
+      if(actuVecteur == true) {//actualiser les infos de vecteur et de cadre
         if(dataaModif.vOrigine != null) if(dataaModif.vOrigine != '-' && dataaModif.vOrigine != undefined && dataaModif.vOrigine != "" && dataaModif.vOrigine != "null") {
-          var key2 = await findKeyWithChampValide("titre", dataaModif.vOrigine);
-          var objetfocus = mapListLeaflet.get(key2);
-          if(dataaModif.vPos.getPo3() != null && objetfocus.vPos != null) if(dataaModif.vPos.po == objetfocus.vPos) throw new Error("test");
+          var objetfocus = map.get(await findKeyWithChampValide("titre", dataaModif.vOrigine));
+          if(dataaModif.vPos.getPo3() != null && objetfocus.vPos != null) if(dataaModif.vPos.po === objetfocus.vPos) throw new Error("L'objet ne peut pas se focus lui meme: " + dataaModif.vPos.po + " " + objetfocus.vPos + ", objet: " + dataaModif.titre + ", objet: " + dataaModif.vPos.getData());
           try{
             dataaModif.vPos.setPo(objetfocus.vPos);
           }
@@ -255,6 +274,7 @@ async function createSelectorMaps(){
     btnListMaps.setListe(tableauFeuilles);
   }
 }
+//
 async function disableAllbuttons(){
   btnSave.disabled = true;
   btnCredits.disabled = true;
@@ -263,6 +283,7 @@ async function disableAllbuttons(){
   btnListMaps.disable();
   btnListLocations.disable();
 }
+//
 async function activeAllButtons(){
   btnSave.disabled = false;
   btnCredits.disabled = false;
@@ -283,9 +304,9 @@ btnSave.onclick = function() {
 }
 //fonctions diverses
 /**cherche le premier doublon dans le tableau et retourne une erreur si trouvé.*/
-function checkDoublon() {
+function checkDoublon(map) {
   const nameSet = new Set(); // Utilisé pour stocker les noms uniques
-  for (const value of mapListLeaflet.values()) {
+  for (const value of map.values()) {
       if("titre" in value) if (nameSet.has(value.titre)) throw new Error("doublon trouvé pour l'objet: " + value.titre);
       nameSet.add(value.titre); // Ajoute le nom au Set
   }
@@ -310,8 +331,8 @@ function isTwoLayerSimilarContent(layer1, layer2, isAbsoluteTest){
        if(layer1 == null || layer2 == null)                              throw new Error("objet nul: [" + layer1 + " ===== " + layer2 + "]");
   else if(layer1.length == 0 || layer2.length == 0)                      throw new Error("objet vide: [" + layer1 + " ===== " + layer2 + "]");
   else if(layer1[0][0] == IMAGE && layer2[0][0] == IMAGE) {//test type, title, mipmapstyle
-  if(isAbsoluteTest) return (layer1[0][0] == layer2[0][0] && layer1[4][1] == layer2[4][1] && layer1[4][6] == layer2[4][6]);
-  else               return (layer1[0][0] == layer2[0][0] && layer1[4][1] == layer2[4][1]);
+    if(isAbsoluteTest) return (layer1[0][0] == layer2[0][0] && layer1[4][1] == layer2[4][1] && layer1[4][6] == layer2[4][6]);
+    else               return (layer1[0][0] == layer2[0][0] && layer1[4][1] == layer2[4][1]);
   }
   else if(layer1[0][0] == MARKER           && layer2[0][0] == MARKER)           return (layer1[0] == layer2[0] && layer1[4][1] == layer2[4][1]);
   else if(layer1[0][0] == MARKER_STATIC_MS && layer2[0][0] == MARKER_STATIC_MS) return true;
@@ -320,59 +341,65 @@ function isTwoLayerSimilarContent(layer1, layer2, isAbsoluteTest){
 }
 /**cette fonction doit etre spam pour fonctionner */
 async function changePosObj(){
-  if(cleImageFocus != null && (mode == MODE_DEPLACEMENT || mode == MODE_ROTATION || mode == MODE_ECHELLE || mode == MODE_INSERTION)){
-    var points = mapListLeaflet.get(cleImageFocus);
-    if(actionEnCours == ACTDEPLACEMENT){
-      if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(mousePos.x - points.vPos.xAbs(), mousePos.y - points.vPos.yAbs()));
-    }
-    else if(actionEnCours == ACTROTATION){
-      if(points.type == IMAGE || points.type == MARKER){
-        if(points.vAngle != null) {
-          var vFromMouseToObj = new V2F();
-          vFromMouseToObj.setXY(mousePos.xAbs() - points.vPos.xAbs(), mousePos.yAbs() - points.vPos.yAbs())
-          var angleActu = vFromMouseToObj.getAngle();
-          var anglediff = mouseLngLastState - angleActu;
-          mouseLngLastState = angleActu;
-          var angleDecal = new V2F(0,0);
-          angleDecal.setAngle(- anglediff);
-          points.vPos.applyRotationDecalageOnEnfants(angleDecal);
-        }
+  if(mush.imageFocus() == null || await mush.getCleImageFocus() == null || mode == MODE_LECTURE) return;
+  var points = await mapListLeaflet.get(await mush.getCleImageFocus());
+  switch (actionEnCours) {
+  case ACTDEPLACEMENT:
+    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(mousePos.x - points.vPos.xAbs(), mousePos.y - points.vPos.yAbs()));
+  break; case ACTROTATION:
+    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
+      var vFromMouseToObj = new V2F();
+      vFromMouseToObj.setXY(mousePos.xAbs() - points.vPos.xAbs(), mousePos.yAbs() - points.vPos.yAbs())
+      var angleActu = vFromMouseToObj.getAngle();
+      if(firstAction){
+        mouseLngLastState = angleActu;
+        firstAction = false;
       }
+      var anglediff = mouseLngLastState - angleActu;
+      mouseLngLastState = angleActu;
+      var angleDecal = new V2F(0,0);
+      angleDecal.setAngle(- anglediff);
+      //points.vAngle.setAngle(angleActu);
+      points.vAngle.setAngle(points.vAngle.getAngle() - anglediff);
+      points.vPos.applyRotationDecalageOnEnfants(angleDecal);
     }
-    else if(actionEnCours == ACTECHELLE){
-      if(points.type == IMAGE || points.type == MARKER){
-        if(points.vAngle != null){
-          var moveX = (mousePos.x - mouseLngLastState);
-          mouseLngLastState = mousePos.x;
-          if(moveX > 0.5) moveX = 0.5;
-          if(moveX < -0.5) moveX = -0.5;
-          //moveX = -moveX; //changement de sens du curseur
-          moveX = moveX / 3; //reduction de sensibilité
-          moveX = 1 + moveX; // entre 0.5 et 1.5 de variation
-          points.vPos.applyScaleDecalageOnEnfants(moveX);
-        }
-      }
+  break; case ACTECHELLE:
+    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
+      var moveX = (mousePos.x - mouseLngLastState);
+      mouseLngLastState = mousePos.x;
+      if(moveX > 0.5) moveX = 0.5;
+      if(moveX < -0.5) moveX = -0.5;
+      //moveX = -moveX; //changement de sens du curseur
+      moveX = moveX / 3; //reduction de sensibilité
+      moveX = 1 + moveX; // entre 0.5 et 1.5 de variation
+      points.vPos.applyScaleDecalageOnEnfants(moveX);
     }
-    if(points.type == IMAGE) mush.changePos(points.vPos,points.vPos1,points.vPos2,points.vPos3,points.vPos4);
-    var liste = points.vPos.getData();
-    await updatePosOnLLObj(points);
-    if(liste != null) for(var i = 0; i < liste.length; i++){
-      if(liste[i] != null) {
-        if(liste[i].type == IMAGE && liste[i].coupleMapLink != null) await updatePosOnLLObj(mapListLeaflet.get(liste[i].coupleMapLink));
-        await updatePosOnLLObj(liste[i]);
-      }
+  break;
+  default: break;
+  }
+  //
+  var liste = points.vPos.getData();
+  await updatePosOnLLObj(points);
+  if(liste != null) for(var i = 0; i < liste.length; i++){
+    if(liste[i] != null) {
+      if(liste[i].type == IMAGE && liste[i].coupleMapLink != null) await updatePosOnLLObj(mapListLeaflet.get(liste[i].coupleMapLink));
+      await updatePosOnLLObj(liste[i]);
     }
   }
+  mush.updatePos();
 }
 /**remplis la liste des lieux détectés sur google*/
 async function remplissageLocations(){
   var donneesGoogleUnOnglet = await google.getContenuTableau("Locations");
-  for(i = 6; i < donneesGoogleUnOnglet.length; i++) await mapListLocations.push([donneesGoogleUnOnglet[i][1], donneesGoogleUnOnglet[i][5]]);
+  for(i = 6; i < donneesGoogleUnOnglet.length; i++) await mapListLocations.push([donneesGoogleUnOnglet[i]]);
 }
 /**compare la liste des lieux de google et la liste actuelle de la carte (non leaflet), et vérifie pour chaque élément si il éxiste dans les 2 tableaux. incrémente 1 si c'est le cas*/
-function compareMapListLocations(){
+async function compareMapListLocations(){
   var cpt = 0;
-  for(i = 0; i < mapListLocations.length; i++) if(findKeyWithChampValide("titre",mapListLocations[i][0]) != null) cpt++;
+  const promesses3 = mapListLocations.map(async (donnee) => {
+    if(await findKeyWithChampValide("titre",donnee[0]) != null) cpt++;
+  });
+  await Promise.all(promesses3);
   return cpt;
 }
 /**fonction lente, cherche la clé de l'objet comprenant la valeur similaire pour un champ donné (retourne le dernier objet trouvé) dans la liste leaflet, retourne null si aucune clé*/
@@ -381,171 +408,154 @@ function findKeyWithChampValide(champ, valeur){
   return null;
 }
 //
+async function traitement2(data){
+  var retour = [];
+  var dataMipmap = null;
+  if(data.type == IMAGE) dataMipmap = await structuredClone(data);
+  await generateObject(data);
+  if(data.objet != null && (data.type == IMAGE || data.type == MARKER || data.type == TEXTE)){
+      data.vPos.setTransfo(data.vAngle);
+      data.objetVecteur = await generateObject(createDataObjet(POLYLIGNE));//ligne vecteur
+      data.objetCarre = [await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE)),await generateObject(createDataObjet(POLYLIGNE))];
+      data.objetVecteur.titre = data.titre + "[V]";
+      data.objetCarre[0].titre = data.titre + "[VC1]";
+      data.objetCarre[1].titre = data.titre + "[VC2]";
+      data.objetCarre[2].titre = data.titre + "[VC3]";
+      data.objetCarre[3].titre = data.titre + "[VC4]";
+  }
+  if(data.objet != null && data.type == IMAGE) {
+      //dataMipmap.vPos = data.vPos;//reappliquer les V2F non possible en clonage
+      dataMipmap.vPos = new V2F(0,0);
+      dataMipmap.vAngle = data.vAngle;
+      dataMipmap.vPos1 = data.vPos1;
+      dataMipmap.vPos2 = data.vPos2;
+      dataMipmap.vPos3 = data.vPos3;
+      dataMipmap.vPos4 = data.vPos4;
+      dataMipmap.vImgTaille = data.vImgTaille;
+      dataMipmap.vTaille = data.vTaille;
+      dataMipmap.isMipmap = true;
+      dataMipmap.titre += "[MM]";
+      await generateObject(dataMipmap);//creer obj mipmap
+      //lien
+      data.coupleMapLink = dataMipmap.key;
+      dataMipmap.coupleMapLink = data.key;
+      dataMipmap.objetVecteur = data.objetVecteur;
+      dataMipmap.objetCarre = data.objetCarre;
+  }
+  retour = [data, dataMipmap];
+  return retour;
+}
+//
 async function createMarker(nom, url){
+  //console.log("create marker !");
   if(nom == null) throw new Error("nom nul");
   var data = createDataObjet(MARKER);
   data.vTaille.setXY(50,50);
   data.url = url;
   data.titre = nom;
   data.plan = 1000;
-  var dataLigne = createDataObjet(POLYLIGNE);
-  var dataCarre1 = createDataObjet(POLYLIGNE);
-  var dataCarre2 = createDataObjet(POLYLIGNE);
-  var dataCarre3 = createDataObjet(POLYLIGNE);
-  var dataCarre4 = createDataObjet(POLYLIGNE);
-  await generateObject(dataLigne);
-  await generateObject(dataCarre1);//cotés carré
-  await generateObject(dataCarre2);
-  await generateObject(dataCarre3);
-  await generateObject(dataCarre4);
-  data.objetVecteur = dataLigne;
-  data.objetCarre = [dataCarre1,dataCarre2,dataCarre3,dataCarre4];
-  await generateObject(data);
-  var cleMarkerFocus = generateCleUnique();
-  data.key = cleMarkerFocus;
-  await mapListLeaflet.set(cleMarkerFocus, data);
-  await linkObjects();
-  await leaflet.removeAllObj(false);
-  limiteMarkercpt = 0;
-  await actualiseMap(mapListLeaflet, false);
-  mush.insertObjetFocus(cleMarkerFocus);
-  data.objet.on('click', function() {
-      clearInterval(holdInterval);//stop le spam
-      mode = MODE_LECTURE;
-      btnEditor.setText("Editor (off)");
-      btnEditor.active();
-  });
+  data.vOrigine = null;
+  data.vPos = new V2F(0,0);
+  //
+  var retour = await traitement2(data);
+  if(retour[0] != null){
+    await mapListLeaflet.set(data.key, data);
+    //await linkObjects(mapListLeaflet);
+    await leaflet.removeAllObj(false);
+    limiteMarkercpt = 0;
+    await actualiseMap(mapListLeaflet, false);
+    mush.insertObjetFocus(data.key);
+    data.objet.on('click', function() {
+      if(mode == MODE_INSERTION) {
+        clearInterval(holdInterval);//stop le spam
+        mode = MODE_LECTURE;
+        btnEditor.setText("Editor (off)");
+        btnEditor.active();
+      }
+    });
+  }
 }
+//
 async function sauvegarder(){
   await fenetreModale.close();
-  content = await google.ecriture()
+  //await google.ecriture(mapListLeaflet)
+  content = await google.generateList(mapListLeaflet);
   fenetreModale.openWithContent(content);
 }
+//
 function click(e){//click détecté sur la carte
-  //console.log("Clique detecte", e.latlng);
-  /*try{
-    if(this.#disableClick) console.log("disableClick")
-    if(!this.#disableClick && mush.isActif()){
-      await mush.reset();
-      var layerFin = await this.findObjFocus(await new V2F(e.latlng.lng, e.latlng.lat));//rang obj focus si objet a focus detecte au niveau de la souris
-      if(layerFin != null) {
-        await mush.insertObjetFocus(layerFin);
-        //await leaflet.popup(null,"tutu");
-        //await mush.action();
-      }
-    }
-    else this.#disableClick = false;
-  }
-  catch (error) {throw error;}*/
 }
-function spam(){changePosObj();}
-function down(e){mush.MouseAppui(e);}
+//
+function spam(){
+  if(mush.imageFocus()) changePosObj();
+}
+//
+function down(e){
+  firstAction = true;
+  mush.MouseAppui(e);
+}
+//
 function downConfirmee(e){}
+//
 function up(e){if(mush.isActif()) mush.mouseRelache();}
 //DATA//
+/**génère une liste des données d'objet (dépend du type)*/
 function createDataObjet(type){
-  var data = null;
-  if(type == IMAGE){
-    data = {
-      //GEN
-      type: type,
-      objet: null,
-      objetVecteur: null,
-      objetCarre: null,
-      actif: true,
-      key: null,
-      //
-      vOrigine: null,
-      vPos: new V2F(0,0),
-      vAngle: null,
-      vPos1: new V2F(0,0),
-      vPos2: new V2F(0,0),
-      vPos3: new V2F(0,0),
-      vPos4: new V2F(0,0),
-      titre: "[image]",
-      //SPC
-      url: null,
-      auteur: null,
-      site: null,
-      vImgTaille: new V2F(0,0),
-      vTaille: new V2F(0,0),
-      isMipmap: false,
-      coupleMapLink: null
-    }
+  var data = {//toute les data possibles
+    type: type,
+    objet: null,
+    objetVecteur: null,
+    objetCarre: null,
+    actif: true,
+    key: null,
+    vOrigine: null,
+    vPos: new V2F(0,0),
+    vAngle: null,
+    titre: null,
+    url: null,
+    vPos1: new V2F(0,0),
+    vPos2: new V2F(0,0),
+    vPos3: new V2F(0,0),
+    vPos4: new V2F(0,0),
+    objetParent: null,
+    auteur: null,
+    site: null,
+    coupleMapLink: null,
+    isMipmap: false,
+    vImgTaille: null
   }
-  else if(type == TILEMAP_DEFAULT){
-    data = {
-      type: type,
-      actif: true,
-      titre: "[tilemap]"
-    };
-  }
-  else if(type == MARKER){
-    data = {
-      //GEN
-      type: type,
-      objet: null,
-      objetVecteur: null,
-      objetCarre: null,
-      actif: true,
-      plan: 10,
-      key: null,
-      actif: true,
-      //
-      vOrigine: null,
-      objetVecteur: null,
-      vPos: new V2F(0,0),
-      vAngle: null,
-      vPos1: new V2F(0,0),
-      vPos2: new V2F(0,0),
-      vPos3: new V2F(0,0),
-      vPos4: new V2F(0,0),
-      titre: "[marker]",
-      //SPC
-      vTaille: new V2F(50,50),
-      url: null
-    };
-  }
-  else if(type == POLYLIGNE){
-    data = {
-      type: type,
-      objet: null,
-      actif: true,
-      plan: 0,
-      key: null,
-      //
-      vOrigine: null,
-      vPos: new V2F(0,0),
-      vAngle: null,
-      vPos1: new V2F(0,0),
-      vPos2: new V2F(0,0),
-      vPos3: new V2F(0,0),
-      vPos4: new V2F(0,0),
-      titre: "[polyligne]",
-      //
-      vPos2: new V2F(1,1),
-      //lien
-      objetParent: null
-    }
-  }
-  else if(type == MARKER_STATIC_MS){
-    data = {
-      //GENERAL
-      type: MARKER_STATIC_MS,
-      objet: null,
-      actif: true,
-      plan: 0,
-      key: null,
-      //
-      vOrigine: null,
-      vPos: new V2F(0,0),
-      vAngle: null,
-      vTaille: new V2F(10,10),
-      titre: "[markerstaticms]",
-      url: shroom
-    }
+  switch (type) {
+    case IMAGE:
+      data.titre = "[image]";
+      data.plan = 0;
+      data.vTaille = new V2F(0,0);
+      data.vImgTaille = new V2F(0,0);
+    break; case TILEMAP_DEFAULT:
+      data.titre = "[tilemap]";
+    break; case MARKER:
+      data.titre = "[marker]";
+      data.plan = 10;
+      data.vTaille = new V2F(50,50)
+    break; case POLYLIGNE:
+      data.titre = "[polyligne]";
+      data.plan = 0;
+      data.vPos2 = new V2F(1,1);
+    break; case MARKER_STATIC_MS:
+      data.titre = "[markerstaticms]";
+      data.plan = 0;
+      data.url = shroom;
+      data.vTaille = new V2F(10,10)
+    break; default:
+    throw new Error("type non reconnu: ", type);
   }
   return data;
 }
-
+/**libère le thread principal pour permettre d'autre actions, notamment l'actualisation de l'affichage*/
+async function refreshEcran(){
+  await new Promise(resolve => setTimeout(resolve, 0));
+}
+async function mainTxt(txt){
+  texteCharg.innerHTML = txt;
+  await refreshEcran();
+}
 //
