@@ -2,9 +2,9 @@
 let clickTimer = null; // Timer pour différencier clic et appui long
 var isHolding = false;
 var holdIntervalLL;
-const LONG_PRESS_THRESHOLD = 300; // Durée en ms pour définir un appui long
+const LONG_PRESS_THRESHOLD = 100; // Durée en ms pour définir un appui long
 let isMouseDown = false; // État de la souris
-let isHandlingClickOrHold = false; // Empêche la double détection
+let isHandlingClickOrHold = false; //Empêche la double détection
 //
 class LeafletMap {
   #disableClick = false;
@@ -30,13 +30,13 @@ class LeafletMap {
     });
     this.#map.on('mousedown', async (e) => {
       //isHolding = true;
-      holdIntervalLL = setInterval(() => {spam();}, 10);//verifie toute les 100ms
       down(e);
       if(!isHandlingClickOrHold) {
         isMouseDown = true; //Marque l'état comme appuyé
         //Lance un timer pour détecter un appui long
         clickTimer = setTimeout(async () => {
           if(isMouseDown) { //Si l'utilisateur maintient l'appui
+            holdIntervalLL = setInterval(() => {spam();}, 10);//verifie toute les 100ms
             isHandlingClickOrHold = true; //Indique qu'on gère un appui long
             downConfirmee(e);
           }
@@ -59,6 +59,7 @@ class LeafletMap {
       isHandlingClickOrHold = false; //Réinitialise l'état*/
     });
   }
+  /*retourne la liste des objets actuellement affichés sur la map*/
   getMap(){
     return this.#mapObjetOnLLData;
   }
@@ -83,7 +84,7 @@ class LeafletMap {
       if (!this.#map.getBounds().contains(vPosData))  this.#map.flyTo(vPosData, this.#map.getZoom());
       //detection
       const popupLatLng = popup.getLatLng();//Vérification de l'attachement du popup
-      if(!popupLatLng) console.log("Le popup n'a pas été correctement attaché.");
+      if(!popupLatLng) console.warn("Le popup n'a pas été correctement attaché.");
       //else console.log("Popup attaché à :", popupLatLng);
       this.#map.invalidateSize();
     } catch (error) {console.error("Erreur lors de la création du popup :", error);}
@@ -117,7 +118,7 @@ class LeafletMap {
   }
   /**actualise les dépendances des objets et leur vecteurs pour tout les objets de la liste*/
   async actualiseMapTracee(){
-    await actualiseMap(mapListLeaflet, true);
+    await actualiseMap(this.getMap(), true);
   }
   /**retourne la clé de l'objet a la position, null si non trouvé (vérifie uniquement les objets chargés)*/
   async findObjFocus(p){
@@ -140,7 +141,7 @@ class LeafletMap {
     return retour;
   }
   /**Ajoute ou supprime un objet à leaflet depuis la liste des commandes complète en fonction de son état actif ou non et de ces sous-objets*/
-  updateObj(data){
+  async updateObj(data){
     try{
       if(!data && !data.objet) throw new Error(`L'objet à traiter est invalide ou manquant (${data?.type || "inconnu"})`);
       if(data.type != POLYLIGNE){
@@ -259,6 +260,7 @@ class LeafletMap {
 async function generateObject(data){
   //Génère une image réduite depuis une image classique, retourne l'objet existant modifié
   if(data.type == IMAGE) if(data.isMipmap) await resizeImage(data, new V2F(10, 10));
+  if(data.type == MARKER) await resizeImage(data, new V2F(100, 100));
   //
   return new Promise(async (resolve) => {
     try{
@@ -359,7 +361,7 @@ async function generateObject(data){
 /**redimensionne l'image focus, retourne le data éxistant avec unfound_img si redimensionnement impossible */
 async function resizeImage(data, l) {
   return new Promise((resolve) => {
-    if(!data.isMipmap) console.error("ne doit pas changer la taille d'une image sans requete de mipmap");
+    //if(!data.isMipmap) console.error("ne doit pas changer la taille d'une image sans requete de mipmap");
     try{
       const image2 = new Image();
       image2.crossOrigin = "anonymous";
