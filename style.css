@@ -36,17 +36,20 @@ html, body {
     cursor: pointer;
 }
 #texteInfo {
-    position: relative;
-    top: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
     font-family: "Helvetica Neue", Arial, sans-serif;
     z-index: 1000;
     padding: 10px 20px;
     color: red;
     border: none;
+    top: 50%;
+    left: 50%;
     border-radius: 5px;
     font-size: 20px;
     cursor: pointer;
-    text-align : center;
+    text-align: center;
+    pointer-events: none; /* pour ne pas gêner les clics sur la carte */
 }
 #btnCreditsId:hover {
     background-color: #ff7373;
@@ -159,7 +162,7 @@ html, body {
     color: white;
     padding: 10px 20px;
     cursor: pointer;
-    min-width: 160px;
+    width: 160px;
 }
 #btnMaps:hover {
     background-color: #ff7373;
@@ -176,8 +179,11 @@ html, body {
 }
 #btnMapsList {
     display: none;
+    position: absolute;
+    top: 37px;
 }
-#btnMapsList a {
+#btnMapsList button {
+    width: 160px;
     font-size: 14px;
     text-align: center;
     background-color: #ffa5a5;
@@ -188,7 +194,7 @@ html, body {
     border-radius: 5px;
     display: block;
 }
-#btnMapsList a:hover {
+#btnMapsList button:hover {
     background-color: #ff7373;
 }
 
@@ -227,13 +233,12 @@ html, body {
     padding: 4px;
     border-radius: 5px;
 }
-#virtual-list {
+#btnLocationsList {
     overflow-y: auto;
     height: 300px;
     width: 249px;
     position: absolute;
-    top: 60px;
-    left: 300px;
+    top: 37px;
     border-radius: 5px;
     padding-right: 1px;
     scrollbar-width: thin;
