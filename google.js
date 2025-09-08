@@ -36,12 +36,12 @@ class GestionGoogle{
     /**stock/modifie et retourne uniquement le nom des onglets google*/
     async getNomFeuilles() {
         try {
-            if (this.#spreadsheetId == null || this.#apiKey == null) throw new Erreur("SpreadsheetId manquant, apiKey manquant");
+            if(this.#spreadsheetId == null || this.#apiKey == null) throw new Erreur("SpreadsheetId manquant, apiKey manquant");
             const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${this.#spreadsheetId}?key=${this.#apiKey}`);
-            if (!response.ok) throw new Error(`Erreur de requête Google sheets, réponse: ${response.status}`);
+            if(!response.ok) throw new Error(`Erreur de requête Google sheets, réponse: ${response.status}`);
             this.#sheetNames = (await response.json()).sheets.map(sheet => sheet.properties.title);
             return this.#sheetNames;
-        } catch (error) { console.log("Erreur dans le chargement google sheets, vérifier id de feuille");}
+        } catch (error) { console.warn("Erreur dans le chargement google sheets, vérifier id de feuille");}
     }
     /**modifie  et retourne la liste des onglets google, update sheetNameFocus et sheetNames*/
     async filterWithPrefixe(prefixe){
@@ -65,7 +65,9 @@ class GestionGoogle{
             var data = null;
             return new Promise((resolve) => {
                 var _plan = -1;
+                //rotation: execute en tant que coin BG par defaut
                 if(isFloatable(lignes[COL_PLAN])) _plan = convertToFloat(lignes[COL_PLAN]);
+                console.log(lignes[COL_TITLE]);
                 switch(lignes[COL_TYPE]){
                     case 'TILEMAP-DEFAULT':
                         data = createDataObjet(TILEMAP_DEFAULT);
@@ -73,80 +75,65 @@ class GestionGoogle{
                     break; case 'MARKER':
                         (function(){
                             const imagePtee = new Image();
-                            const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
-                            const l = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
-                            var a = null;
-                            var angle = null;
-                            if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
-                            if(angle != null){
-                                a = new V2F(0,0);
-                                a.setAngle(angle);//angle degré en normale
-                            }
-                            var imgDesc = lignes[COL_TITLE];
                             imagePtee.src = lignes[COL_URL];
                             imagePtee.onload = async function() {
-                                l.y = imagePtee.height / imagePtee.width * l.x;
-                                //generer dependances
+                                //
+                                const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
+                                const l = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
                                 data = createDataObjet(MARKER);
                                 data.plan = _plan;
-                                if(lignes[COL_PARENT] != "-") data.vOrigine = lignes[COL_PARENT];
+                                var angle = null;
+                                if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
+                                if(angle != null){
+                                    data.vAngle = new V2F(0,0);
+                                    data.vAngle.setAngle(angle);//angle degré en normale
+                                }
+                                if(lignes[COL_PARENT] != "-") data.vOrigine = lignes[COL_PARENT];//generer dependances
                                 data.vPos = p;
-                                data.vTaille = l;
-                                if(a != null) data.vAngle = a;
+                                l.y = imagePtee.height / imagePtee.width * l.x;//calcul automatique de rapport
                                 data.url = lignes[COL_URL];
-                                data.titre = imgDesc;
+                                data.vTaille = l;
+                                data.titre = lignes[COL_TITLE];
+                                //
                                 resolve(data);
                             }
+                            imagePtee.onerror = function() {resolve(null);};//si l'image n'est pas valide
                         }());
                     break; case 'IMG-LX-CENTER':
                         (async function(){
                             const imagePtee = new Image();
-                            const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
-                            const l = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
-                            var angle = null;
-                            //imagePtee.crossOrigin = "anonymous";
-                            //execute en tant que coin BG par defaut
-                            if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
                             imagePtee.src = lignes[COL_URL];
                             imagePtee.onload = async function() {
                                 const imgL = new V2F(imagePtee.width,imagePtee.height);
-                                l.y = imgL.y / imgL.x * l.x;
-                                //var tabl = await getPosApresRotation(p,l,a);
-                                //var tabl = await getPosApresRotation(p,l,a.getAngle());
+                                //
+                                const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
+                                const l = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
                                 data = createDataObjet(IMAGE);
                                 data.plan = _plan;
-                                if(lignes[COL_PARENT] != "-") data.vOrigine = lignes[COL_PARENT];
+                                var angle = null;
+                                if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
                                 if(angle != null) {
                                     data.vAngle = new V2F(0,0);
                                     data.vAngle.setAngle(angle);
                                 }
-                                //
-                                const p1 = new V2F(-l.x/2, -l.y/2);
-                                p1.po = p;
-                                const p2 = new V2F(+l.x/2, -l.y/2);
-                                p2.po = p;
-                                const p3 = new V2F(+l.x/2, +l.y/2);
-                                p3.po = p;
-                                const p4 = new V2F(-l.x/2, +l.y/2);
-                                p4.po = p;
-                                //
+                                if(lignes[COL_PARENT] != "-") data.vOrigine = lignes[COL_PARENT];//generer dependances
                                 data.vPos = p;
-                                data.vPos1 = p1;
-                                data.vPos2 = p2;
-                                data.vPos3 = p3;
-                                data.vPos4 = p4;
+                                l.y = imgL.y / imgL.x * l.x;//calcul automatique de rapport
                                 data.url = lignes[COL_URL];
+                                data.vTaille = l;
                                 data.titre = lignes[COL_TITLE];
+                                //
+                                const p1 = new V2F(-l.x/2, -l.y/2);     p1.po = p;  data.vPos1 = p1;
+                                const p2 = new V2F(+l.x/2, -l.y/2);     p2.po = p;  data.vPos2 = p2;
+                                const p3 = new V2F(+l.x/2, +l.y/2);     p3.po = p;  data.vPos3 = p3;
+                                const p4 = new V2F(-l.x/2, +l.y/2);     p4.po = p;  data.vPos4 = p4;
                                 data.auteur = lignes[COL_AUTHOR];
                                 data.site = lignes[COL_SITE];
                                 data.vImgTaille = imgL;
-                                data.vTaille = l;
+                                //
                                 resolve(data);//retour ok
                             }
-                            imagePtee.onerror = function() {//si l'image n'est pas valide
-                                //objlistGoogle.push([[MARKER,null,false,plan],"",[lignes[5],p,null],[new V2F(10,10)],[unfound_img,"Image " + lignes[7] + " not found, check URL"]]);
-                                resolve(null);
-                            };
+                            imagePtee.onerror = function() {resolve(null);};//si l'image n'est pas valide
                         }());
                     break; case 'IMG-LX':
                         resolve(null);
@@ -154,41 +141,32 @@ class GestionGoogle{
                         resolve(null);
                     break; case 'TEXT':
                         (async function(){
-                            const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
-                            const l = new V2F(lignes[COL_LX], lignes[COL_LX] / lignes[COL_TITLE].length * 2);
-                            var angle = null;
-                            if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
                             //Convertir le texte en image
                             var textImageUrl = textToImage(lignes[COL_TITLE], 40 * lignes[COL_TITLE].length / 2, 40);//pas ici
-                            //Définir les coordonnées pour l'image sur la carte
+                            //
+                            const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
+                            const l = new V2F(lignes[COL_LX], 0);
                             data = createDataObjet(IMAGE);
-                            data.type = TEXTE;
                             data.plan = _plan;
+                            var angle = null;
+                            if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
                             if(angle != null) {
                                 data.vAngle = new V2F(0,0);
                                 data.vAngle.setAngle(angle);
                             }
-                            //
-                            const p1 = new V2F(-l.x/2, -l.y/2);
-                            p1.po = p;
-                            const p2 = new V2F(+l.x/2, -l.y/2);
-                            p2.po = p;
-                            const p3 = new V2F(+l.x/2, +l.y/2);
-                            p3.po = p;
-                            const p4 = new V2F(-l.x/2, +l.y/2);
-                            p4.po = p;
-                            //
+                            if(lignes[COL_PARENT] != "-") data.vOrigine = lignes[COL_PARENT];
                             data.vPos = p;
-                            data.vPos1 = p1;
-                            data.vPos2 = p2;
-                            data.vPos3 = p3;
-                            data.vPos4 = p4;
+                            l.y = lignes[COL_LX] / lignes[COL_TITLE].length * 2;//calcul automatique de rapport
                             data.url = textImageUrl;
-                            data.titre = lignes[COL_TITLE];
                             data.vTaille = l;
-                            //const bounds = [[dataa[2], dataa[1]], [dataa[2] + 1, dataa[1] + 4]];
-                            //var tabl = await getPosApresRotation(p,l,convertToFloat(lignes[5]));
-                            //objlistGoogle.push([[TEXT,null,false,plan],"",["",tabl[0]],[tabl[1],tabl[2],tabl[3],tabl[4]],[textImageUrl,sizeTxt,lignes[4],l,convertToFloat(lignes[5])]]);//ici?
+                            data.titre = lignes[COL_TITLE];
+                            //
+                            const p1 = new V2F(-l.x/2, -l.y/2);     p1.po = p;      data.vPos1 = p1;
+                            const p2 = new V2F(+l.x/2, -l.y/2);     p2.po = p;      data.vPos2 = p2;
+                            const p3 = new V2F(+l.x/2, +l.y/2);     p3.po = p;      data.vPos3 = p3;
+                            const p4 = new V2F(-l.x/2, +l.y/2);     p4.po = p;      data.vPos4 = p4;
+                            data.type = TEXTE;
+                            //
                             resolve(data);
                         }());
                     break; default:
@@ -214,6 +192,7 @@ class GestionGoogle{
                 }
             });
             await Promise.all(promesses1);
+            console.log("google load ok");
             await mainTxt("Remplissage du contenu des listes Leaflet...");
             //await checkDoublon();
             //traitement des commandes simplifiées et remplissage de la liste Leaflet
@@ -268,12 +247,12 @@ class GestionGoogle{
                     s[COL_TYPE] = "POLYLIGNE";
                 }
                 if(value.type == TEXTE || value.type == MARKER || value.type == IMAGE){
-                    s[COL_X] = value.vPos.x;
-                    s[COL_Y] = value.vPos.y;
-                    s[COL_LX] = value.vTaille.x;
+                    s[COL_X] = value.vPos.x.toFixed(4);
+                    s[COL_Y] = value.vPos.y.toFixed(4);
+                    s[COL_LX] = convertToFloat(value.vTaille.x).toFixed(3);
                     s[COL_PARENT] = value.vOrigine;
                     s[COL_TITLE] = value.titre;
-                    if(value.vAngle != null) s[COL_ANGLE] = value.vAngle.getAngle();
+                    if(value.vAngle != null) s[COL_ANGLE] = value.vAngle.getAngle().toFixed(2);
                     if(value.type != TEXTE) s[COL_URL] = value.url;
                 }
                 s[COL_PLAN] = value.plan;
