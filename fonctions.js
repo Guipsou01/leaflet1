@@ -321,7 +321,7 @@ async function createSelectorMaps(){
     btnListMaps.setListe(tableauFeuilles);
   }
 }
-//
+/** Desactive l'appui sur tout les boutons */
 async function disableAllbuttons(){
   btnSave.disabled = true;
   btnCredits.disabled = true;
