@@ -17,10 +17,10 @@ var firstAction = true;
 var holdInterval = null;
 var parentSelectOne = null;
 var parentSelectTwo = null;
-//const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
+const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
 //const limiteMarker = 1;
 //const limiteMarker = 10; //limite d'affichage de markers en meme temps// -1 = tous
-const limiteMarker = 500; //limite d'affichage de markers en meme temps// -1 = tous
+//const limiteMarker = 500; //limite d'affichage de markers en meme temps// -1 = tous
 //const limiteMarker = 1000; //limite d'affichage de markers en meme temps// -1 = tous
 const btnEditor = new hudButton1(document.getElementById("btnEditor"), document.getElementById("btnEditorContent"));
 const btnVecteur = new hudButton1(document.getElementById("btnVecteur"), document.getElementById("btnVecteurContent"));
