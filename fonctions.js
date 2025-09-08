@@ -15,30 +15,77 @@ var vecteurVisu = false;
 var limiteMarkercpt = 0;
 var firstAction = true;
 var holdInterval = null;
+var parentSelectOne = null;
+var parentSelectTwo = null;
 //const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
 //const limiteMarker = 1;
-const limiteMarker = 100; //limite d'affichage de markers en meme temps// -1 = tous
+//const limiteMarker = 10; //limite d'affichage de markers en meme temps// -1 = tous
+const limiteMarker = 500; //limite d'affichage de markers en meme temps// -1 = tous
+//const limiteMarker = 1000; //limite d'affichage de markers en meme temps// -1 = tous
 const btnEditor = new hudButton1(document.getElementById("btnEditor"), document.getElementById("btnEditorContent"));
-const btnVecteur = new hudButton2(document.getElementById("btnVecteur"), document.getElementById("btnVecteurContent"));
-const btnListMaps = new hudList(document.getElementById('btnMaps'), document.getElementById('btnMapsList'));
-const btnListLocations = new hudVirtualList(document.getElementById('btnLocations'), document.getElementById('btnLocationsContent'), document.getElementById('virtual-list'));
+const btnVecteur = new hudButton1(document.getElementById("btnVecteur"), document.getElementById("btnVecteurContent"));
+const btnListMaps = new hudList(document.getElementById('btnMaps'), document.getElementById('btnMapsList'), false);
+const btnListLocations = new hudList(document.getElementById('btnLocations'), document.getElementById('btnLocationsList'), true);
 const mush = new MushroomSelector();
 const google = new GestionGoogle();
-const fenetreModale = new FenetreModale();
+const fenetreModale = new FenetreModale(document.getElementById('fenetreCredits-content'), document.getElementsByClassName("croixCreditsId")[0], document.getElementById("fenetreCreditsId"));
 
 const MODE_LECTURE = 0;
 const MODE_DEPLACEMENT = 1;
 const MODE_ROTATION = 2;
 const MODE_ECHELLE = 3;
 const MODE_INSERTION = 4;
-
+const MODE_LINK = 5;
+//clique a l'exterieur de la liste pour fermer la liste des locations
+const cliqueOnExtFenetreToCloseHVL = () => {
+  if(mode != MODE_INSERTION) mush.active();
+}
+const clickSurBtnLocations = () => {
+  //var donneesLocations = await google.getContenuTableau(sheetNameFocus);
+  mush.reset();
+  mush.disable();
+}
+//action sur tout les boutons de la liste a chaque refresh
+const renderForEachSlotLoc = (ligneFocus, btnHTML) => {
+  if(findKeyWithChampValide("titre",btnHTML.textContent) != null) btnHTML.disabled = true;
+}
+//appui sur le bouton vecteur
+const cliqueSurBtnVecteur = () => {
+  vecteurVisu = !vecteurVisu;
+  if(vecteurVisu) btnVecteur.setText("Parent (on)");
+  else            btnVecteur.setText("Parent (off)");
+  leaflet.actualiseMapTracee();
+  //actualiseMap(mapListLeaflet, false);
+}
+//appui sur le bouton editeur
+const cliqueSurBtnEditor = () => {
+  switch (mode) {
+           case MODE_LECTURE:     mode = MODE_DEPLACEMENT;  btnEditor.setText("Editor (move)");
+    break; case MODE_DEPLACEMENT: mode = MODE_ROTATION;     btnEditor.setText("Editor (rotation)");
+    break; case MODE_ROTATION:    mode = MODE_ECHELLE;      btnEditor.setText("Editor (scale)");
+    break; case MODE_ECHELLE:     mode = MODE_LINK;         btnEditor.setText("Editor (parent)");
+    break; case MODE_LINK:        mode = MODE_LECTURE;      btnEditor.setText("Editor (off)");
+    break; default: throw new Error("Etat non compris: " + mode);
+  }
+  leaflet.closePopup();
+  resetParentMode();
+  //console.log(mapListLeaflet.size);
+  actualiseMap(leaflet.getMap(), true);
+}
+const cliqueSurSlotListe2 = (option, id, item) => {
+  //event.preventDefault(); //Empêche le comportement par défaut du lien
+  btnListMaps.setText(option);
+  if(typeof sheetNameFocus !== 'undefined') sheetNameFocus = option;
+  resetAllMapContent();
+  //this.#fermerListe();
+};
 const cliqueSurSlotListe1 = (liste, id, item) => {
   item.disabled = true;
   mode = MODE_INSERTION;
-  btnEditorContent.textContent = "Insertion";
+  btnEditor.setText("Insertion");
   btnEditor.disable();
   //creation objet
-  createMarker((liste[0][1]), (liste[0][5]));
+  createMarker((liste[1]), (liste[5]));
   actionEnCours = ACTDEPLACEMENT;
   //lancement boucle d'insertion
   holdInterval = setInterval(() => {spam();}, 10);//verifie toute les 100ms
@@ -91,26 +138,27 @@ async function corps(){
   <p style="text-align: center;"><a href="#" style="cursor: pointer; text-decoration: underline;" onclick="sauvegarder()">Sauvegarder</a></p><br>
   `;
   btnVecteur.setText("Parent (off)");
-  btnListLocations.setName("Locations List");
-  btnListLocations.setFunctionOnClick(cliqueSurSlotListe1);
+  btnVecteur.setFunctionOnClick(cliqueSurBtnVecteur);
+  btnListLocations.setText("Locations List");
+  btnListLocations.setFunctionOnClickBtn(clickSurBtnLocations);
+  btnListLocations.setFunctionOnClickListe(cliqueSurSlotListe1);
+  btnListLocations.setFunctionOnClickExtFenetreWhenAffichee(cliqueOnExtFenetreToCloseHVL);
+  btnListLocations.setFunctionOnRenderForEachSlot(renderForEachSlotLoc);
+  btnListMaps.setFunctionOnClickListe(cliqueSurSlotListe2);
   texteCharg = document.getElementById('texteInfo');
   //console.log("[initialisation] Démarrage");
   texteCharg.innerHTML = "Démarrage";
   //initialisation map leaflet
   //requette et enregistrement donnees google 
-  //lienObj.href = lienTxt; // Assigner le lien à l'attribut href
-  //lienObj.textContent = lienTxt; // Mettre à jour le texte affiché pour correspondre au lien
   btnEditor.setText("Editor (off)");
+  btnEditor.setFunctionOnClick(cliqueSurBtnEditor);
   btnListMaps.setText("Loading...");
   //console.log("[initialisation] Recération données onglets google (lent)...");
   texteCharg.innerHTML = "Recupération données onglets google...";
   var sheetNamesLocations = await google.getNomFeuilles();
   var sheetNames = await google.filterWithPrefixe("Leaflet_");
-  if(sheetNames == null) sheetNameFocus = "Google table not found";
-  else if(sheetNames.length == 0) sheetNameFocus = "No tab found";
-  else sheetNameFocus = sheetNames[0];
+  sheetNameFocus = (sheetNames == null) ? "Google table not found" : (sheetNameFocus = (sheetNames.length == 0) ? "No tab found" : sheetNames[0]);
   if(isTablContainElem(sheetNamesLocations,"Locations")) await remplissageLocations();
-  await btnListLocations.createSelector();
   //console.log("[initialisation] Init sélecteur...");
   mainTxt("Initialisation sélecteur...");
   await createSelectorMaps();
@@ -156,7 +204,6 @@ async function resetAllMapContent(){
     await checkDoublon(mapListLeaflet);
     //btnListLocations.setName("Locations List (" + await compareMapListLocations() + " / " + mapListLocations.length + ")");
     btnListLocations.setListe(mapListLocations,1);
-    btnListLocations.update();
     activeAllButtons();
   } catch (error) {console.error("Error:", error);}
 }
@@ -173,17 +220,10 @@ async function calculTracabilite(data, limite) {
         //if(leaflet.getZoomLvl() >= 8) nvEtat = imagePosInScreenVar_;
         //else nvEtat = false;
         if(limiteMarker == -1) limite = false;
-        if(limite){
-          if(limiteMarkercpt <= limiteMarker) nvEtat = imagePosInScreenVar_;
-          else nvEtat = false;
-        }
-        else nvEtat = imagePosInScreenVar_;
-        //nvEtat = imagePosInScreenVar_;
+        nvEtat = limite ? ((limiteMarkercpt <= limiteMarker) ? imagePosInScreenVar_ : false) : imagePosInScreenVar_;
         if(limite) if(nvEtat == true) limiteMarkercpt++;
       break; case IMAGE:
-        if(imagePosInScreenVar_ && !data.isMipmap) nvEtat = !isTooShort_;
-        else if(imagePosInScreenVar_ && data.isMipmap) nvEtat = isTooShort_;
-        else if(!imagePosInScreenVar_) nvEtat = false;
+        nvEtat = (imagePosInScreenVar_ && !data.isMipmap) ? !isTooShort_ : (imagePosInScreenVar_ && data.isMipmap) ? isTooShort_ : !imagePosInScreenVar_ ? false : nvEtat;
       break; case MARKER_STATIC_MS:
         //géré directement par mushroomselector ?
         //if(!imagePosInScreenVar_ && nvEtat) await mush.reset();
@@ -198,16 +238,16 @@ async function calculTracabilite(data, limite) {
     data.actif = nvEtat;
     //var etatVecteur = data.actif && vecteurVisu;
     var etatVecteur = false;
-    if(data.type == MARKER && limite) etatVecteur = vecteurVisu && data.actif;
-    else etatVecteur = vecteurVisu;
-    //if(data.type == IMAGE) etatVecteur = (etatVecteur || (mapListLeaflet.get(data.coupleMapLink).actif));
-    if(data.objetVecteur != null) data.objetVecteur.actif = etatVecteur;
-    if(data.objetCarre != null) for(var i = 0; i < data.objetCarre.length; i++) data.objetCarre[i].actif = etatVecteur;
+    etatVecteur = (data.type == MARKER && limite) ? (vecteurVisu && data.actif) : vecteurVisu;
+    if(data.type == IMAGE) etatVecteur = (etatVecteur || (mapListLeaflet.get(data.coupleMapLink).actif));
+    if(data.objetVecteur != null) data.objetVecteur.actif = etatVecteur && data.actif;
+    if(data.objetCarre != null) for(var i = 0; i < data.objetCarre.length; i++) data.objetCarre[i].actif = etatVecteur && data.actif;
+    if((data.key == parentSelectOne || data.key == parentSelectTwo) && data.objetCarre != null && !data.isMipmap) for(var i = 0; i < data.objetCarre.length; i++) data.objetCarre[i].actif = true;
   } catch (error) {console.error("Error:", error);}
 }
 //============LEAFLETLIST==============
 //=========GOOGLE=========
-/**supprime tout les éléments, vérifie le tracage de nouveaux éléments d'une map en parametre et les insère dans leaflet*/
+/**supprime tout les éléments, vérifie le tracage de nouveaux éléments d'une map en parametre et les insère dans leaflet, mapobj: liste visée, limite: prend en compte une limite de markers*/
 async function actualiseMap(mapobj, limite){
   try{
     limiteMarkercpt = 0;
@@ -216,10 +256,13 @@ async function actualiseMap(mapobj, limite){
       throw new TypeError("mapobj n'est pas un itérable valide.");
     }
     for(const [key, value] of mapobj) await updatePosOnLLObj(value);
-    for(const [key, value] of mapobj) await calculTracabilite(value, limite);
-    for(const [key, value] of mapobj) await leaflet.updateObj(value);
-    //
     await mush.updatePos();
+    //
+    for(const [key, value] of mapobj) await calculTracabilite(value, limite);
+    await mush.calculTracabiliteMarkers();
+    //
+    for(const [key, value] of mapobj) await leaflet.updateObj(value);
+    await mush.updateObj();
     //
     await checkDoublon(mapobj);
     //stats();
@@ -240,12 +283,16 @@ async function linkObjects(map){
       if(actuVecteur == true) {//actualiser les infos de vecteur et de cadre
         if(dataaModif.vOrigine != null) if(dataaModif.vOrigine != '-' && dataaModif.vOrigine != undefined && dataaModif.vOrigine != "" && dataaModif.vOrigine != "null") {
           var objetfocus = map.get(await findKeyWithChampValide("titre", dataaModif.vOrigine));
+          //console.log(dataaModif.titre + " " + dataaModif.vOrigine);
           if(dataaModif.vPos.getPo3() != null && objetfocus.vPos != null) if(dataaModif.vPos.po === objetfocus.vPos) throw new Error("L'objet ne peut pas se focus lui meme: " + dataaModif.vPos.po + " " + objetfocus.vPos + ", objet: " + dataaModif.titre + ", objet: " + dataaModif.vPos.getData());
           try{
-            dataaModif.vPos.setPo(objetfocus.vPos);
+            if(objetfocus == null) {
+              console.log("Error: objet focus non défini pour " + dataaModif.titre);
+              dataaModif.vOrigine = null;
+            }
+            else dataaModif.vPos.setPo(objetfocus.vPos);
           }
           catch(err) {
-            if(objetfocus == null) console.error("Error: objet focus non défini pour " + dataaModif.titre);
             console.error("Error: au niveau des objets ", dataaModif.titre, " et ", objetfocus.titre, ": " + err);
           }
         }
@@ -306,30 +353,23 @@ btnSave.onclick = function() {
 /**cherche le premier doublon dans le tableau et retourne une erreur si trouvé.*/
 function checkDoublon(map) {
   const nameSet = new Set(); // Utilisé pour stocker les noms uniques
-  for (const value of map.values()) {
-      if("titre" in value) if (nameSet.has(value.titre)) throw new Error("doublon trouvé pour l'objet: " + value.titre);
-      nameSet.add(value.titre); // Ajoute le nom au Set
-  }
+  for(const value of map.values()) if(value.titre) if(!nameSet.add(value.titre)) throw new Error(`Doublon trouvé pour l'objet : ${value.titre}`); //Vérifie si "titre" existe, puis add() retourne false si l'élément existe déjà
 }
 //
 /**cherche le rang de la liste leaflet de l'objet similaire depuis une data, -1 si non trouvé, l'état doit etre exact*/
-async function rgFromImageData(data, absoluteTest){
-  var retour = -1;
-  for(var i = 0; i < objListLeaflet.length; i++){
-    if(await isTwoLayerSimilarContent(objListLeaflet[i][0],data,absoluteTest)) {
-      retour = i;
-      return retour;
-    }
-  }
-  return retour;
+async function rgFromImageData(data, absoluteTest) {
+  const results = await Promise.all(
+    objListLeaflet.map((item, index) => isTwoLayerSimilarContent(item[0], data, absoluteTest).then(match => match ? index : -1))
+  );
+  return results.find(index => index !== -1) ?? -1; //Trouve le premier index valide
 }
 /**
  * vérifie si deux objet sont similaires (vérifie le type, desc pour les markers et titre pour les images)
  * absoluteTest on = verifie si meme etat pour image (normal ou mipmaped)
  *  */
 function isTwoLayerSimilarContent(layer1, layer2, isAbsoluteTest){
-       if(layer1 == null || layer2 == null)                              throw new Error("objet nul: [" + layer1 + " ===== " + layer2 + "]");
-  else if(layer1.length == 0 || layer2.length == 0)                      throw new Error("objet vide: [" + layer1 + " ===== " + layer2 + "]");
+       if(layer1 == null      || layer2 == null)                          throw new Error("objet nul: [" + layer1 + " ===== " + layer2 + "]");
+  else if(layer1.length == 0  || layer2.length == 0)                      throw new Error("objet vide: [" + layer1 + " ===== " + layer2 + "]");
   else if(layer1[0][0] == IMAGE && layer2[0][0] == IMAGE) {//test type, title, mipmapstyle
     if(isAbsoluteTest) return (layer1[0][0] == layer2[0][0] && layer1[4][1] == layer2[4][1] && layer1[4][6] == layer2[4][6]);
     else               return (layer1[0][0] == layer2[0][0] && layer1[4][1] == layer2[4][1]);
@@ -344,7 +384,7 @@ async function changePosObj(){
   if(mush.imageFocus() == null || await mush.getCleImageFocus() == null || mode == MODE_LECTURE) return;
   var points = await mapListLeaflet.get(await mush.getCleImageFocus());
   switch (actionEnCours) {
-  case ACTDEPLACEMENT:
+         case ACTDEPLACEMENT:
     if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(mousePos.x - points.vPos.xAbs(), mousePos.y - points.vPos.yAbs()));
   break; case ACTROTATION:
     if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
@@ -372,10 +412,11 @@ async function changePosObj(){
       //moveX = -moveX; //changement de sens du curseur
       moveX = moveX / 3; //reduction de sensibilité
       moveX = 1 + moveX; // entre 0.5 et 1.5 de variation
+      points.vTaille.x *= moveX;
+      points.vTaille.y *= moveX;
       points.vPos.applyScaleDecalageOnEnfants(moveX);
     }
   break;
-  default: break;
   }
   //
   var liste = points.vPos.getData();
@@ -391,7 +432,7 @@ async function changePosObj(){
 /**remplis la liste des lieux détectés sur google*/
 async function remplissageLocations(){
   var donneesGoogleUnOnglet = await google.getContenuTableau("Locations");
-  for(i = 6; i < donneesGoogleUnOnglet.length; i++) await mapListLocations.push([donneesGoogleUnOnglet[i]]);
+  for(i = 6; i < donneesGoogleUnOnglet.length; i++) await mapListLocations.push(donneesGoogleUnOnglet[i]);
 }
 /**compare la liste des lieux de google et la liste actuelle de la carte (non leaflet), et vérifie pour chaque élément si il éxiste dans les 2 tableaux. incrémente 1 si c'est le cas*/
 async function compareMapListLocations(){
@@ -404,7 +445,7 @@ async function compareMapListLocations(){
 }
 /**fonction lente, cherche la clé de l'objet comprenant la valeur similaire pour un champ donné (retourne le dernier objet trouvé) dans la liste leaflet, retourne null si aucune clé*/
 function findKeyWithChampValide(champ, valeur){
-  for (const [key, dataaModif] of mapListLeaflet) if(champ in dataaModif) if(dataaModif[champ] == valeur) return key;
+  for(const [key, dataaModif] of mapListLeaflet) if(champ in dataaModif) if(dataaModif[champ] == valeur) return key;
   return null;
 }
 //
@@ -458,22 +499,21 @@ async function createMarker(nom, url){
   data.vPos = new V2F(0,0);
   //
   var retour = await traitement2(data);
-  if(retour[0] != null){
-    await mapListLeaflet.set(data.key, data);
-    //await linkObjects(mapListLeaflet);
-    await leaflet.removeAllObj(false);
-    limiteMarkercpt = 0;
-    await actualiseMap(mapListLeaflet, false);
-    mush.insertObjetFocus(data.key);
-    data.objet.on('click', function() {
-      if(mode == MODE_INSERTION) {
-        clearInterval(holdInterval);//stop le spam
-        mode = MODE_LECTURE;
-        btnEditor.setText("Editor (off)");
-        btnEditor.active();
-      }
-    });
-  }
+  if(retour[0] == null) return;
+  await mapListLeaflet.set(data.key, data);
+  //await linkObjects(mapListLeaflet);
+  await leaflet.removeAllObj(false);
+  limiteMarkercpt = 0;
+  await actualiseMap(mapListLeaflet, false);
+  mush.insertObjetFocus(data.key);
+  data.objet.on('click', function() {
+    if(mode == MODE_INSERTION) {
+      clearInterval(holdInterval);//stop le spam
+      mode = MODE_LECTURE;
+      btnEditor.setText("Editor (off)");
+      btnEditor.active();
+    }
+  });
 }
 //
 async function sauvegarder(){
@@ -495,7 +535,60 @@ function down(e){
   mush.MouseAppui(e);
 }
 //
-function downConfirmee(e){}
+async function downConfirmee(e){
+  if(await mush.getCleImageFocus() != null && mode == MODE_LINK) {
+    if(parentSelectOne == null) parentSelectOne = await mush.getCleImageFocus();
+    else {
+      if(parentSelectTwo != null) changeCarreColor(parentSelectTwo, 'red');
+      parentSelectTwo = await mush.getCleImageFocus();
+    }
+    if(parentSelectTwo == parentSelectOne) {
+      resetParentMode();
+      return;
+    }
+    if(parentSelectOne != null){
+      changeCarreColor(parentSelectOne, 'blue');
+    }
+    if(parentSelectTwo != null){
+      var txt = mapListLeaflet.get(parentSelectOne).titre + "<br><center>TO</center>" + mapListLeaflet.get(parentSelectTwo).titre;
+      if(mapListLeaflet.get(parentSelectTwo).vPos.detectCirculariteBool(mapListLeaflet.get(parentSelectOne).vPos)) txt += "<br><center>Circular detection</center>";
+      else txt += `<br><center><a href="#" style="cursor: pointer; text-decoration: underline;" onclick="changeDependances()">[OK]</a></center>`;
+      leaflet.popup(await mapListLeaflet.get(parentSelectTwo), txt);
+      changeCarreColor(parentSelectTwo, 'yellow');
+    }
+    await actualiseMap(mapListLeaflet, false);
+  }
+}
+async function changeDependances(){
+  var obj1 = mapListLeaflet.get(parentSelectOne);
+  var obj2 = mapListLeaflet.get(parentSelectTwo);
+  var distanceX = obj2.vPos.xAbs() - obj1.vPos.xAbs();
+  var distanceY = obj2.vPos.yAbs() - obj1.vPos.yAbs();
+  //console.log("changedependance");
+  obj2.vPos.po = obj1.vPos;
+  obj2.vPos.setXY(distanceX,distanceY);
+  //console.log(distanceX + ":" + distanceY);
+  var vecteur = obj2.objetVecteur;
+  vecteur.vPos = obj2.vPos;
+  vecteur.vPos2 = obj2.vPos.getPo2();
+  actualiseMap(mapListLeaflet, true);
+  obj2.vOrigine = obj1.titre;
+  resetParentMode();
+  await actualiseMap(mapListLeaflet, false);
+}
+async function resetParentMode(){
+  changeCarreColor(parentSelectOne, 'red');
+  changeCarreColor(parentSelectTwo, 'red');
+  parentSelectTwo = null;
+  parentSelectOne = null;
+  leaflet.closePopup();
+}
+function changeCarreColor(key, color){
+  if(key == null) return;
+  var carre1 = mapListLeaflet.get(key).objetCarre;
+  if(carre1 == null) return;
+  for(var i = 0; i < carre1.length; i++) carre1[i].objet[0].setStyle({color: color});
+}
 //
 function up(e){if(mush.isActif()) mush.mouseRelache();}
 //DATA//
