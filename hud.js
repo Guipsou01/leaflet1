@@ -34,6 +34,7 @@ class hudList {
       }
     };
   }
+  erreurSiNotFunction(fct){}
   #fermerListe(){//Masquer la liste après sélection
     this.#virtualList.style.display = 'none';
   }
@@ -140,5 +141,4 @@ class hudButton1{
     this.#fctOnClick = fct;
     if(this.#fctOnClick != null && this.#btn != null) this.#btn.onclick = () => {this.#fctOnClick();}
   }
-  erreurSiNotFunction(fct){}
 }
