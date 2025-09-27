@@ -34,7 +34,7 @@ class hudList {
       }
     };
   }
-  erreurSiNotFunction(fct){}
+  //erreurSiNotFunction(fct){}
   #fermerListe(){//Masquer la liste après sélection
     this.#virtualList.style.display = 'none';
   }
@@ -105,16 +105,20 @@ class hudList {
     this.#renderItems();
   }
   setFunctionOnClickBtn(fct){
-    erreurSiNotFunction(fct); this.#fctOnClickBtn = fct;
+    //erreurSiNotFunction(fct);
+    this.#fctOnClickBtn = fct;
   }
   setFunctionOnClickListe(fct) {
-    erreurSiNotFunction(fct); this.#fctOnClickLst = fct;
+    //erreurSiNotFunction(fct);
+    this.#fctOnClickLst = fct;
   }
   setFunctionOnRenderForEachSlot(fct) {
-    erreurSiNotFunction(fct); this.#fctOnRenderForEachSlot = fct;
+    //erreurSiNotFunction(fct);
+    this.#fctOnRenderForEachSlot = fct;
   }
   setFunctionOnClickExtFenetreWhenAffichee(fct){
-    erreurSiNotFunction(fct); this.#fctOnClickExt = fct;
+    //erreurSiNotFunction(fct);
+    this.#fctOnClickExt = fct;
   }
 }
 //INTERFACE BOUTON SIMPLE
@@ -125,7 +129,7 @@ class hudButton1{
     this.#btn = var1; //objet html bouton
     this.#btn.disabled = true;
   }
-  erreurSiNotFunction(fct){}
+  //erreurSiNotFunction(fct){}
   /**Applique un texte au bouton de sélecteur */
   setText(txt){
     this.#btn.textContent = txt;
@@ -138,7 +142,7 @@ class hudButton1{
   }
   /**prend une fonction en paramètre et l'éxécute lors de l'appui sur le bouton. Fonction sans paramètre uniquement*/
   setFunctionOnClick(fct) {
-    erreurSiNotFunction(fct); 
+    //erreurSiNotFunction(fct); 
     this.#fctOnClick = fct;
     if(this.#fctOnClick != null && this.#btn != null) this.#btn.onclick = () => {this.#fctOnClick();}
   }
