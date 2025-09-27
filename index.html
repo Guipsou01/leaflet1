@@ -28,17 +28,17 @@
         </div>
     </div>
     <div class="btnMaps-container">
-        <button id="btnMaps"><div id="btnMapsContent">Initialisation</button>
+        <button id="btnMaps"><span id="btnMapsContent">Initialisation</span></button>
         <div id="btnMapsList" class="btnMaps-list"></div>
     </div>
     <div class="btnLocations-container">
-        <button id="btnLocations"><div id="btnLocationsContent">Locations list</button>
+        <button id="btnLocations"><span id="btnLocationsContent">Locations list</span></button>
         <div id="btnLocationsList" style="display: none;"></div>
     </div>
     <button id="btnCreditsId">Credits</button>
-    <button id="btnEditor"><div id="btnEditorContent">Editor</div></button>
-    <button id="btnVecteur"><div id="btnVecteurContent">Parents</div></button>
-    <button id="btnSave">Save</div></button>
+    <button id="btnEditor"><span id="btnEditorContent">Editor</span></button>
+    <button id="btnVecteur"><span id="btnVecteurContent">Parents</span></button>
+    <button id="btnSave"><span id="btnSaveContent">Save</span></button>
     <script src="maths.js"></script>
     <script src="vecteur.js"></script>
     <script src="google.js"></script>
@@ -49,7 +49,9 @@
     <script src="mushroomSelector.js"></script>
     <script src="fonctions.js"></script>
     <script type="module">
-        corps();
+        document.addEventListener("DOMContentLoaded", () => {
+            corps();
+        });
     </script>
 </body>
 </html>
