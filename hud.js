@@ -125,6 +125,7 @@ class hudButton1{
     this.#btn = var1; //objet html bouton
     this.#btn.disabled = true;
   }
+  erreurSiNotFunction(fct){}
   /**Applique un texte au bouton de sélecteur */
   setText(txt){
     this.#btn.textContent = txt;
