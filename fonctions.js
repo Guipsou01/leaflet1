@@ -70,7 +70,7 @@ const cliqueSurBtnEditor = () => {
   leaflet.closePopup();
   resetParentMode();
   //console.log(mapListLeaflet.size);
-  actualiseMap(leaflet.getMap(), true);
+  //actualiseMap(leaflet.getMap(), true);ICI
 }
 const cliqueSurSlotListe2 = (option, id, item) => {
   //event.preventDefault(); //Empêche le comportement par défaut du lien
@@ -260,7 +260,10 @@ async function actualiseMap(mapobj, limite){
     for(const [key, value] of mapobj) await updatePosOnLLObj(value);
     await mush.updatePos();
     //
-    for(const [key, value] of mapobj) await calculTracabilite(value, limite);
+    for(const [key, value] of mapobj) {
+      console.log("lecture de: value:" + value.type);
+      await calculTracabilite(value, limite);
+    }
     await mush.calculTracabiliteMarkers();
     //
     for(const [key, value] of mapobj) await leaflet.updateObj(value);
