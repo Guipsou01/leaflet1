@@ -136,8 +136,9 @@ class hudButton1{
   }
   /**prend une fonction en paramètre et l'éxécute lors de l'appui sur le bouton. Fonction sans paramètre uniquement*/
   setFunctionOnClick(fct) {
-    //erreurSiNotFunction(fct); 
+    erreurSiNotFunction(fct); 
     this.#fctOnClick = fct;
     if(this.#fctOnClick != null && this.#btn != null) this.#btn.onclick = () => {this.#fctOnClick();}
   }
+  erreurSiNotFunction(fct){}
 }
