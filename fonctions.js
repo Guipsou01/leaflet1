@@ -211,7 +211,6 @@ async function resetAllMapContent(){
 async function calculTracabilite(data, limite) {
   try{
     var imagePosInScreenVar_ = await objectPosInScreen(data);//vérifie si l'objet devrait etre dans l'écran
-    var isTooShort_ = await leaflet.isShort(data);//vérifie si l'objet devrait etre affiché petit ou non
     var nvEtat = data.actif;
     switch (data.type){
       case TILEMAP_DEFAULT:
@@ -223,7 +222,9 @@ async function calculTracabilite(data, limite) {
         nvEtat = limite ? ((limiteMarkercpt <= limiteMarker) ? imagePosInScreenVar_ : false) : imagePosInScreenVar_;
         if(limite) if(nvEtat == true) limiteMarkercpt++;
       break; case IMAGE:
-        nvEtat = (imagePosInScreenVar_ && !data.isMipmap) ? !isTooShort_ : (imagePosInScreenVar_ && data.isMipmap) ? isTooShort_ : !imagePosInScreenVar_ ? false : nvEtat;
+        //nvEtat = (imagePosInScreenVar_ && !data.isMipmap) ? !isTooShort_ : (imagePosInScreenVar_ && data.isMipmap) ? isTooShort_ : !imagePosInScreenVar_ ? false : nvEtat;
+        nvEtat = imagePosInScreenVar_;
+        //nvEtat = false;
       break; case MARKER_STATIC_MS:
         //géré directement par mushroomselector ?
         //if(!imagePosInScreenVar_ && nvEtat) await mush.reset();
@@ -236,10 +237,12 @@ async function calculTracabilite(data, limite) {
       break;
     }
     data.actif = nvEtat;
-    //var etatVecteur = data.actif && vecteurVisu;
-    var etatVecteur = false;
-    etatVecteur = (data.type == MARKER && limite) ? (vecteurVisu && data.actif) : vecteurVisu;
-    if(data.type == IMAGE) etatVecteur = (etatVecteur || (mapListLeaflet.get(data.coupleMapLink).actif));
+    var etatVecteur = data.actif && vecteurVisu;
+    //var etatVecteur = false;
+    //etatVecteur = (data.type == MARKER && limite) ? (vecteurVisu && data.actif) : vecteurVisu;
+    //if(dat)
+    //if(data.type == IMAGE) etatVecteur = (etatVecteur || (mapListLeaflet.get(data.coupleMapLink).actif));
+    //etatVecteur = true;
     if(data.objetVecteur != null) data.objetVecteur.actif = etatVecteur && data.actif;
     if(data.objetCarre != null) for(var i = 0; i < data.objetCarre.length; i++) data.objetCarre[i].actif = etatVecteur && data.actif;
     if((data.key == parentSelectOne || data.key == parentSelectTwo) && data.objetCarre != null && !data.isMipmap) for(var i = 0; i < data.objetCarre.length; i++) data.objetCarre[i].actif = true;
@@ -252,7 +255,6 @@ async function actualiseMap(mapobj, limite){
   try{
     limiteMarkercpt = 0;
     if(!mapobj || typeof mapobj[Symbol.iterator] !== 'function') {
-      console.log("mapobj :", mapobj);
       throw new TypeError("mapobj n'est pas un itérable valide.");
     }
     for(const [key, value] of mapobj) await updatePosOnLLObj(value);
@@ -451,8 +453,8 @@ function findKeyWithChampValide(champ, valeur){
 //
 async function traitement2(data){
   var retour = [];
-  var dataMipmap = null;
-  if(data.type == IMAGE) dataMipmap = await structuredClone(data);
+  //var dataMipmap = null;
+  //if(data.type == IMAGE) dataMipmap = await structuredClone(data);
   await generateObject(data);
   if(data.objet != null && (data.type == IMAGE || data.type == MARKER || data.type == TEXTE)){
       data.vPos.setTransfo(data.vAngle);
@@ -464,26 +466,7 @@ async function traitement2(data){
       data.objetCarre[2].titre = data.titre + "[VC3]";
       data.objetCarre[3].titre = data.titre + "[VC4]";
   }
-  if(data.objet != null && data.type == IMAGE) {
-      //dataMipmap.vPos = data.vPos;//reappliquer les V2F non possible en clonage
-      dataMipmap.vPos = new V2F(0,0);
-      dataMipmap.vAngle = data.vAngle;
-      dataMipmap.vPos1 = data.vPos1;
-      dataMipmap.vPos2 = data.vPos2;
-      dataMipmap.vPos3 = data.vPos3;
-      dataMipmap.vPos4 = data.vPos4;
-      dataMipmap.vImgTaille = data.vImgTaille;
-      dataMipmap.vTaille = data.vTaille;
-      dataMipmap.isMipmap = true;
-      dataMipmap.titre += "[MM]";
-      await generateObject(dataMipmap);//creer obj mipmap
-      //lien
-      data.coupleMapLink = dataMipmap.key;
-      dataMipmap.coupleMapLink = data.key;
-      dataMipmap.objetVecteur = data.objetVecteur;
-      dataMipmap.objetCarre = data.objetCarre;
-  }
-  retour = [data, dataMipmap];
+  retour = data;
   return retour;
 }
 //
@@ -499,14 +482,14 @@ async function createMarker(nom, url){
   data.vPos = new V2F(0,0);
   //
   var retour = await traitement2(data);
-  if(retour[0] == null) return;
+  if(retour == null) return;
   await mapListLeaflet.set(data.key, data);
   //await linkObjects(mapListLeaflet);
   await leaflet.removeAllObj(false);
   limiteMarkercpt = 0;
   await actualiseMap(mapListLeaflet, false);
   mush.insertObjetFocus(data.key);
-  data.objet.on('click', function() {
+  data.objet[0].on('click', function() {
     if(mode == MODE_INSERTION) {
       clearInterval(holdInterval);//stop le spam
       mode = MODE_LECTURE;
@@ -598,14 +581,17 @@ function createDataObjet(type){
     type: type,
     objet: null,
     objetVecteur: null,
+    objetVecteurMipmap: null,
     objetCarre: null,
     actif: true,
     key: null,
+    keymm: null,
     vOrigine: null,
     vPos: new V2F(0,0),
     vAngle: null,
     titre: null,
     url: null,
+    urlmm: null,
     vPos1: new V2F(0,0),
     vPos2: new V2F(0,0),
     vPos3: new V2F(0,0),
@@ -614,7 +600,7 @@ function createDataObjet(type){
     auteur: null,
     site: null,
     coupleMapLink: null,
-    isMipmap: false,
+    mipmapActif: false,
     vImgTaille: null
   }
   switch (type) {
