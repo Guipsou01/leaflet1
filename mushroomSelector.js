@@ -43,7 +43,7 @@ class MushroomSelector {
   async changePos(tabl){
     if(tabl.length != 5) throw new Error("tableau non egal a 5: " + tabl.length);
     selectorPos.set(tabl[0]);
-    for(var i = 0; i < 10; i++) await this.#allmarkersdata[i].objet[0].setLatLng(toLLCoords(tabl[i % 5]));
+    //for(var i = 0; i < 10; i++) await this.#allmarkersdata[i].objet[0].setLatLng(toLLCoords(tabl[i % 5]));
   }
   async imageFocus(){
     return (this.#cleImageFocus != null && this.#isActif);
