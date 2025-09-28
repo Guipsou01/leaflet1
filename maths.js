@@ -72,3 +72,6 @@ function dot(gauche, p, p1, p2){
     if(gauche) return ((p2.x - p1.x) * (p.y - p1.y) - (p.x - p1.x) * (p2.y - p1.y) < 0);
     else return ((p2.x - p1.x) * (p.y - p1.y) - (p.x - p1.x) * (p2.y - p1.y) > 0);
 }
+function erreurSiNotFunction(fct){
+    if(typeof fct !== 'function') throw new Error("Le parametre doit être une fonction.");
+}
