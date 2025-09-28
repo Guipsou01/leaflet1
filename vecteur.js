@@ -134,14 +134,32 @@ class V2F{
         this.y = v2f.y;
         return this;//chainage
     }
-    /**empeiche les actions circulaires*/
+    /**empeiche les actions circulaires, retourne une erreur si trouvé*/
     #detectCircularite(p1){
         while (p1 !== null) {
             if (p1 === this) throw new Error("Une origine circulaire a été détectée.");
             p1 = p1.getPo3(); //Remonte les origines
         }
     }
-    /**x*/
+    /**empeiche les actions circulaires, retourne true si trouvé*/
+    detectCirculariteBool(p1){
+        while (p1 !== null) {
+            if (p1 === this) return true;
+            p1 = p1.getPo3(); //Remonte les origines
+        }
+        return false;
+    }
+    /**Retourne la valeur vecteur dans une chaine de texte avec un arrondi (arrondi non pris en compte si -1 ou null)*/
+    toTxtSimple(rnd){
+        if(rnd == null || rnd == -1 || rnd == 0) return "[" + this.#x + ":" + this.#y + "]";
+        else return "[" + convertToFloat(this.#x).toFixed(rnd) + ":" + convertToFloat(this.#y).toFixed(rnd) + "]";
+    }
+    /**Retourne la valeur vecteur absolue dans une chaine de texte avec un arrondi (arrondi non pris en compte si -1 ou null)*/
+    toTxtSimpleAbs(rnd){
+        if(rnd == null || rnd == -1 || rnd == 0) return "[" + this.xAbs() + ":" + this.yAbs() + "]";
+        else return "[" + convertToFloat(this.xAbs()).toFixed(rnd) + ":" + convertToFloat(this.yAbs()).toFixed(rnd) + "]";
+    }
+    /**Retourne le vecteur dans une chaine de texte, affiche également la dépendance*/
     toTxt(){
         var txt = "[" + this.#x + ":" + this.#y + "_REF=" + this.getPo2().x + ":" + this.getPo2().y +"]";
         return txt
