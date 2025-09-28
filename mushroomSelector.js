@@ -96,7 +96,7 @@ class MushroomSelector {
   }
   async updateObj(){
     //console.log("updateobj");
-    for(var i = 0; i < this.#allmarkersdata.length; i++) this.#allmarkersdata[i].isActif = true;
+    //for(var i = 0; i < this.#allmarkersdata.length; i++) this.#allmarkersdata[i].isActif = true;
     for(var i = 0; i < this.#allmarkersdata.length; i++) leaflet.updateObj(this.#allmarkersdata[i]);
   }
   /**retourne la clé de l'image focus par le ms, retourne null si aucun objet focus*/
