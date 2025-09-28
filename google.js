@@ -67,7 +67,6 @@ class GestionGoogle{
                 var _plan = -1;
                 //rotation: execute en tant que coin BG par defaut
                 if(isFloatable(lignes[COL_PLAN])) _plan = convertToFloat(lignes[COL_PLAN]);
-                console.log(lignes[COL_TITLE]);
                 switch(lignes[COL_TYPE]){
                     case 'TILEMAP-DEFAULT':
                         data = createDataObjet(TILEMAP_DEFAULT);
@@ -130,6 +129,7 @@ class GestionGoogle{
                                 data.auteur = lignes[COL_AUTHOR];
                                 data.site = lignes[COL_SITE];
                                 data.vImgTaille = imgL;
+                                data.mipmapActif = true;
                                 //
                                 resolve(data);//retour ok
                             }
@@ -192,7 +192,6 @@ class GestionGoogle{
                 }
             });
             await Promise.all(promesses1);
-            console.log("google load ok");
             await mainTxt("Remplissage du contenu des listes Leaflet...");
             //await checkDoublon();
             //traitement des commandes simplifiées et remplissage de la liste Leaflet
@@ -200,8 +199,7 @@ class GestionGoogle{
             const promesses2 = Array.from(mapListGoogle.entries()).map(async ([key, data], rang) => {//traiter toute les lignes en meme temps...
                 var retour = await traitement2(data);
                 if(retour != null){
-                    if(retour[0] != null)  map.set(retour[0].key, retour[0]);//image normale
-                    if(retour[1] != null)  map.set(retour[1].key, retour[1]);//gestion mipmap
+                    if(retour.objet[0] != null)  map.set(retour.key, retour);//image normale
                     cpt++;
                     await mainTxt(`Remplissage du contenu des listes Leaflet: ${cpt} / ${mapListGoogle.size - 1}`);
                 }
