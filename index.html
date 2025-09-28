@@ -1,58 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaflet Image Filter Example</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        #map { height: 500px; }
-    </style>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Letsgo</title>
+    <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet-global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 </head>
 <body>
-
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://ivansanchez.github.io/Leaflet.ImageOverlay.Rotated/Leaflet.ImageOverlay.Rotated.js"></script>
-<script>
-    // Initialisation de la carte
-    const map = L.map('map').setView([0, 0], 2); // Vue initiale sur le centre du monde
-    // Stocker les overlays ajoutés
-    const overlays = [];
-
-    // Fonction pour charger les images selon la zone visible
-    function loadImages() {
-        // Supprimer les images existantes
-        overlays.forEach(overlay => {
-            map.removeLayer(overlay);
+    <div id="map" style="width: 1800px; height: 1200px;">
+        <div id="texteInfo">Initialisation</div>
+    </div>
+    <div id="texteCurseur" style="position:absolute; font: size 5px; font-weight:bold; pointer-events:none; z-index:1000;">Je te suis !</div>
+    <div id="fenetreCreditsId">
+        <div class="modal-content">
+            <span class="croixCreditsId">&times;</span>
+            <div id=fenetreCredits-content>unknown</div>
+        </div>
+    </div>
+    <div class="btnMaps-container">
+        <button id="btnMaps"><span id="btnMapsContent">Initialisation</span></button>
+        <div id="btnMapsList" class="btnMaps-list"></div>
+    </div>
+    <div class="btnLocations-container">
+        <button id="btnLocations"><span id="btnLocationsContent">Locations list</span></button>
+        <div id="btnLocationsList" style="display: none;"></div>
+    </div>
+    <button id="btnCreditsId">Credits</button>
+    <button id="btnEditor"><span id="btnEditorContent">Editor</span></button>
+    <button id="btnVecteur"><span id="btnVecteurContent">Parents</span></button>
+    <button id="btnSave"><span id="btnSaveContent">Save</span></button>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://ivansanchez.github.io/Leaflet.ImageOverlay.Rotated/Leaflet.ImageOverlay.Rotated.js"></script>
+    <script src="https://unpkg.com/leaflet-polylinedecorator/dist/leaflet.polylineDecorator.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <script src="maths.js"></script>
+    <script src="vecteur.js"></script>
+    <script src="google.js"></script>
+    <script src="modale.js"></script>
+    <script src="hud.js"></script>
+    <script src="hudVirtualList.js"></script>
+    <script src="leaflet.js"></script>
+    <script src="mushroomSelector.js"></script>
+    <script src="fonctions.js"></script>
+    <script src="processus.js"></script>
+    <script type="module">
+        document.addEventListener("DOMContentLoaded", () => {
+            corps();
         });
-        overlays.length = 0; // Réinitialiser le tableau des overlays
-
-        // Charger les images si elles sont visibles
-        //*
-        const imageOverlay1 = L.imageOverlay("https://static.wikia.nocookie.net/terminalmontage/images/4/4e/Screen_Shot_2022-07-15_at_3.30.11_PM.png", [[-10, -10], [10, 10]]).addTo(map);
-        if (imageOverlay1) {
-            overlays.push(imageOverlay1); // Conserver l'overlay pour le gérer plus tard
-        }//*/
-        //*
-        const imageOverlay2 = L.imageOverlay("https://static.wikia.nocookie.net/terminalmontage/images/4/4e/Screen_Shot_2022-07-15_at_3.30.11_PM.png", [[-5, -5], [5, 5]]).addTo(map);
-        if (imageOverlay2) {
-            overlays.push(imageOverlay2); // Conserver l'overlay pour le gérer plus tard
-        }//*/
-        //*
-        const imageOverlay3 = L.imageOverlay.rotated("https://static.wikia.nocookie.net/terminalmontage/images/4/4e/Screen_Shot_2022-07-15_at_3.30.11_PM.png", [3,7], [17,7], [3,-4]).addTo(map);
-        if (imageOverlay3) {
-        overlays.push(imageOverlay3); // Conserver l'overlay pour le gérer plus tard
-        }//*/
-    }
-
-    // Événement pour charger les images lors du déplacement de la carte
-    map.on('moveend', loadImages);
-
-    // Charger les images initialement
-    loadImages();
-</script>
-
+    </script>
 </body>
 </html>
