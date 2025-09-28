@@ -1,24 +1,33 @@
-var fenetreCredits = document.getElementById("fenetreCreditsId");
-var popupContent = document.getElementById('fenetreCredits-content');
-var croixCredits = document.getElementsByClassName("croixCreditsId")[0];
+
 class FenetreModale {
+    #popupContent = null;
+    #croixCredits = null;
+    #fenetreCredits = null;
     #isActif = false;
-    constructor(){
+    constructor(modaleContent, croixCredits, fenetreCreditsID){
+        this.#popupContent = modaleContent;
+        this.#croixCredits = croixCredits;
+        this.#fenetreCredits = fenetreCreditsID;
+        /**appui sur la croix de la fenetre modale */
+        this.#croixCredits.onclick = () => {
+            this.close();
+        }
+        /**appui sur la fenetre */
+        window.onclick = (event) => {
+            if(event.target === this.#fenetreCredits) this.close();
+        }
     }
     openWithContent(texte){
-        popupContent.innerHTML = texte;
-        fenetreCredits.style.display = "block";
+        if(this.#popupContent == null) throw new Error("fenetre modale non init");
+        this.#popupContent.innerHTML = texte;
+        this.open();
+    }
+    open(){
+        this.#fenetreCredits.style.display = "block";
+        disableAllbuttons();
     }
     close(){
-        fenetreCredits.style.display = "none";
+        this.#fenetreCredits.style.display = "none";
+        activeAllButtons();
     }
-}
-/**appui sur la fenetre */
-window.onclick = function(event) {
-    if(event.target == fenetreCredits) fenetreCredits.style.display = "none";
-}
-/**appui sur la croix de la fenetre modale */
-croixCredits.onclick = function() {
-    fenetreModale.close();
-    activeAllButtons();
 }
