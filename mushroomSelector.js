@@ -53,7 +53,7 @@ class MushroomSelector {
     if(this.#isActif){
       this.#cleImageFocus = null;
       await this.changePos([new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0)]);
-      await this.calculTracabiliteMarkers();
+      //await this.calculTracabiliteMarkers();
       leaflet.closePopup();
     }
   }
@@ -71,7 +71,7 @@ class MushroomSelector {
           this.#allmarkersdata[i + this.#allmarkersdata.length / 2].actif = false;
         }
       }
-      else for(var i = 0; i < this.#allmarkersdata.length; i++) this.#allmarkersdata[i].actif = false; 
+      //else for(var i = 0; i < this.#allmarkersdata.length; i++) this.#allmarkersdata[i].actif = false; 
     }
     catch (error) {console.error("Error:", error);}
   }
