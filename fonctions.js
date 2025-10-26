@@ -28,7 +28,6 @@ const btnVecteur = new hudButton1(document.getElementById("btnVecteur"), documen
 const btnListMaps = new hudList(document.getElementById('btnMaps'), document.getElementById('btnMapsList'), false);
 const btnListLocations = new hudList(document.getElementById('btnLocations'), document.getElementById('btnLocationsList'), true);
 const mush = new MushroomSelector();
-const google = new GestionGoogle();
 const fenetreModale = new FenetreModale(document.getElementById('fenetreCredits-content'), document.getElementsByClassName("croixCreditsId")[0], document.getElementById("fenetreCreditsId"));
 
 const MODE_LECTURE = 0;
