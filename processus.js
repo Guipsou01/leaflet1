@@ -5,6 +5,7 @@
 //TEXT:             donnees = [cmd,obj,isActif,plan],"",[vOrigine,vPos,vAngle],[p1,p2,p3,p4],[url-canva,size,text,lOnLeaflet,angle]
 //MARKERSTATIC:     donnees = [cmd,obj,isActif,plan],"",[vOrigine,vPos,vAngle],[l],[url]
 /**fonction d'initialisation principale du programme */
+const google = new GestionGoogle();
 async function corps(){
   disableAllbuttons();
   var ssId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; //Mario Games / Maps / Locations
