@@ -51,6 +51,21 @@ html, body {
     text-align: center;
     pointer-events: none; /* pour ne pas gêner les clics sur la carte */
 }
+#log {
+    position: absolute;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    z-index: 1000;
+    padding: 10px 20px;
+    color: red;
+    border: none;
+    bottom: 2%;
+    left: 2%;
+    border-radius: 5px;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: left;
+    pointer-events: none; /* pour ne pas gêner les clics sur la carte */
+}
 #btnCreditsId:hover {
     background-color: #ff7373;
 }
