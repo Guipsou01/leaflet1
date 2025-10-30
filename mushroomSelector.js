@@ -30,35 +30,49 @@ class MushroomSelector {
       }
     } catch (error) {console.error("Error:", error);}
   }
+  /**retourne si le MS est ouvert*/
   isActif(){
     return this.#isActif == true;
   }
+  /**active le ms */
   active(){
     this.#isActif = true;
   }
+  /**desactive le ms */
   disable(){
     this.#isActif = false;
+  }
+  /**retourne true si le ms focus une image et affiché*/
+  async imageFocus(){
+    return (this.#cleImageFocus != null && this.#isActif);
+  }
+  /**copy colle certains parametres de marker static ms */
+  #copyValues(data1, data2){
+    data1.l = data2.l;
+    data1.url = data2.url;
   }
   /**change la position globale du sélecteur ainsi que celui de ces markers*/
   async changePos(tabl){
     if(tabl.length != 5) throw new Error("tableau non egal a 5: " + tabl.length);
     selectorPos.set(tabl[0]);
-    //for(var i = 0; i < 10; i++) await this.#allmarkersdata[i].objet[0].setLatLng(toLLCoords(tabl[i % 5]));
-  }
-  async imageFocus(){
-    return (this.#cleImageFocus != null && this.#isActif);
-  }
-  /**réinitialise la position et la visibilité des icones, l'affichage du popup, défocus l'image select*/
-  async reset(){
-    if(this.#isActif){
-      this.#cleImageFocus = null;
-      await this.changePos([new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0)]);
-      //await this.calculTracabiliteMarkers();
-      leaflet.closePopup();
+    for(var i = 0; i < this.#allmarkersdata.length; i++) {
+      if(this.#allmarkersdata[i].objet[0] == null || this.#allmarkersdata[i].objet[0] == undefined) throw new Error("data de marqueur MS supprimé");
+      await this.#allmarkersdata[i].objet[0].setLatLng(toLLCoords(tabl[i % 5]));
     }
   }
+  /**met a jour la position des icones sur l'objet focus */
+  async updatePos(){
+    try{
+      if(this.#cleImageFocus != null){
+        var data = await mapListLeaflet.get(await this.getCleImageFocus());
+        if(data != null) await this.changePos([data.vPos,data.vPos1,data.vPos2,data.vPos3,data.vPos4]);
+      }
+      else await this.changePos([new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0),new V2F(0,0)]);
+    }
+    catch (error) {console.error("Error:", error);}
+  }
   /**desactive et réactive l'affichage des markers en fonction du mode*/
-  calculTracabiliteMarkers(){
+  async calculTracabilite(){
     try{
       if(this.#cleImageFocus != null){
         this.#isActif = true;
@@ -71,32 +85,11 @@ class MushroomSelector {
           this.#allmarkersdata[i + this.#allmarkersdata.length / 2].actif = false;
         }
       }
-      //else for(var i = 0; i < this.#allmarkersdata.length; i++) this.#allmarkersdata[i].actif = false; 
+      else for(var i = 0; i < this.#allmarkersdata.length; i++) this.#allmarkersdata[i].actif = false; 
     }
     catch (error) {console.error("Error:", error);}
   }
-  /**copy colle certains parametres de marker static ms */
-  #copyValues(data1, data2){
-    data1.l = data2.l;
-    data1.url = data2.url;
-  }
-  /**actions de relachement de souris */
-  mouseRelache(){
-    if(this.#isActif) if(leaflet.isDraggingDisabled()) {
-      leaflet.enableDragging();
-      actionEnCours = ACTNULL;
-    }
-  }
-  /**met a jour la position des icones sur l'objet focus */
-  async updatePos(){
-    if(this.#cleImageFocus != null){
-      var points = await mapListLeaflet.get(await mush.getCleImageFocus());
-      if(points != null)  mush.changePos([points.vPos,points.vPos1,points.vPos2,points.vPos3,points.vPos4]);
-    }
-  }
   async updateObj(){
-    //console.log("updateobj");
-    //for(var i = 0; i < this.#allmarkersdata.length; i++) this.#allmarkersdata[i].isActif = true;
     for(var i = 0; i < this.#allmarkersdata.length; i++) leaflet.updateObj(this.#allmarkersdata[i]);
   }
   /**retourne la clé de l'image focus par le ms, retourne null si aucun objet focus*/
@@ -107,39 +100,66 @@ class MushroomSelector {
   async insertObjetFocus(imgfoc){
     this.#cleImageFocus = imgfoc;
   }
-  /**actions d'appui de transformation de souris*/
-  async MouseAppui(e){
-    if(!this.#isActif) return;
-    var layerFin = await leaflet.findObjFocus(new V2F(e.latlng.lng, e.latlng.lat));//rang obj focus si objet a focus detecte au niveau de la souris
-    if(layerFin != null) {//si objet trouvé a l'appui...
-      this.#cleImageFocus = layerFin;
-      var points = await mapListLeaflet.get(this.#cleImageFocus);
-      var type = points.type;
-      var texte = "";
-      await this.changePos([points.vPos,points.vPos1,points.vPos2,points.vPos3,points.vPos4]);
-      if((mode == MODE_DEPLACEMENT || mode == MODE_ROTATION || mode == MODE_ECHELLE || mode == MODE_INSERTION || mode == MODE_LINK) && this.#cleImageFocus != null && actionEnCours == ACTNULL){
-        await leaflet.disableDragging();
-             if(mode == MODE_DEPLACEMENT) actionEnCours = ACTDEPLACEMENT;
-        else if(mode == MODE_ROTATION)    actionEnCours = ACTROTATION;
-        else if(mode == MODE_ECHELLE)     actionEnCours = ACTECHELLE;
-        else if(mode == MODE_LINK)        actionEnCours = ACTLINK;
-        mouseLngLastState = mousePos.x;
-      }
-      else if((mode == MODE_LECTURE) && this.#cleImageFocus != null && actionEnCours == ACTNULL) {
-        await leaflet.closePopup();
-        texte += "<h3>" + points.titre + "</h3>";
-        if(type == IMAGE) texte += "Author:  " + points.auteur + "<br>Website link: <a href=" + points.site + ">[Click here]</a><br><br>";
-        if(type == IMAGE || type == TEXTE) texte += "Image size: " + points.vImgTaille.toTxtSimpleAbs(0) + "<br>Image scale:" + points.vTaille.toTxtSimpleAbs(3) + "<br>";
-        if(points.vPos != null) texte += "GCS rel. position: " + points.vPos.toTxtSimple(3) + "<br>GCS abs. position: " + points.vPos.toTxtSimpleAbs(3) + "<br>";
-        if(points.vAngle != null) texte += "Angle: " + points.vAngle.getAngle() + "<br>";
-        if(points.vOrigine != null && points.vOrigine != "null") texte += "Child of: " + points.vOrigine + "<br>";
-        leaflet.popup(points, texte);
-        await actualiseMap(leaflet.getMap(), false);
-        //else await this.reset();
-      }
+  /**actions de relachement de souris */
+  async mouseRelache(){
+    if(this.#isActif) if(leaflet.isDraggingDisabled()) {
+      leaflet.enableDragging();
+      actionEnCours = ACTNULL;
     }
-    else await this.reset();
-    //await actualiseMap(leaflet.getMap(), true);
-    //mapListLeaflet
+  }
+  /**actions d'appui de transformation de souris*/
+  async mouseAppui(e){
+    try{
+      if(!this.#isActif) return;
+      var layerFin = await leaflet.findObjFocus(new V2F(e.latlng.lng, e.latlng.lat));//rang obj focus si objet a focus detecte au niveau de la souris
+      if(layerFin != null) {//si objet trouvé a l'appui...
+        this.#cleImageFocus = layerFin;
+        await this.updatePos();
+        await this.calculTracabilite();
+        await this.updateObj();
+        if((mode == MODE_DEPLACEMENT || mode == MODE_ROTATION || mode == MODE_ECHELLE || mode == MODE_INSERTION || mode == MODE_LINK) && this.#cleImageFocus != null && actionEnCours == ACTNULL){
+          await leaflet.disableDragging();
+               if(mode == MODE_DEPLACEMENT) actionEnCours = ACTDEPLACEMENT;
+          else if(mode == MODE_ROTATION)    actionEnCours = ACTROTATION;
+          else if(mode == MODE_ECHELLE)     actionEnCours = ACTECHELLE;
+          else if(mode == MODE_LINK)        actionEnCours = ACTLINK;
+          mouseLngLastState = leaflet.mousePos.x;
+        }
+        else if((mode == MODE_LECTURE) && this.#cleImageFocus != null && actionEnCours == ACTNULL) await this.affichepopupobjet(await mapListLeaflet.get(await this.getCleImageFocus()));
+      }
+      else await this.reset();
+      //await actualiseMap(leaflet.getMap(), true);
+      //mapListLeaflet
+      await updateLog("mouse press ms");
+    }
+    catch (error) {console.error("Error:", error);}
+  }
+  /**réinitialise la position et la visibilité des icones, l'affichage du popup, défocus l'image select*/
+  async reset(){
+    if(this.#isActif){
+      this.#cleImageFocus = null;
+      //await this.calculTracabiliteMarkers();
+      leaflet.closePopup();
+      await this.updatePos();
+      await this.calculTracabilite();
+      await this.updateObj();
+    }
+  }
+  /**affiche le popup avec les infos de l'objet focus au clique en mode lecture */
+  async affichepopupobjet(data){
+    try{
+    var type = data.type;
+    var texte = "";
+    await leaflet.closePopup();
+    texte += "<h3>" + data.titre + "</h3>";
+    if(type == IMAGE) texte += "Author:  " + data.auteur + "<br>Website link: <a href=" + data.site + ">[Click here]</a><br><br>";
+    if(type == IMAGE || type == TEXTE) texte += "Image size: " + data.vImgTaille.toTxtSimpleAbs(0) + "<br>Image scale:" + data.vTaille.toTxtSimpleAbs(3) + "<br>";
+    if(data.vPos != null) texte += "GCS rel. position: " + data.vPos.toTxtSimple(3) + "<br>GCS abs. position: " + data.vPos.toTxtSimpleAbs(3) + "<br>";
+    if(data.vAngle != null) texte += "Angle: " + data.vAngle.getAngle() + "<br>";
+    if(data.vOrigine != null && data.vOrigine != "null") texte += "Child of: " + data.vOrigine + "<br>";
+    leaflet.popup(data, texte);
+    //else await this.reset();
+    }
+    catch (error) {console.error("Error:", error);}
   }
 }
