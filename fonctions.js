@@ -1,26 +1,23 @@
 //<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.polylinedecorator/1.8.1/leaflet.polylineDecorator.min.js"></script>
 const unfound_img = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4fqKc0vxzBaLA0Vy9Edx9TIKzaCHxt_vHhImlsbNBeKkpZdu_nfYCLivgQSSOut8jB9c&usqp=CAU';
 var sheetNameFocus;
-var mousePos = new V2F(0,0);
 var mouseLngLastState = 0;
 var rgImgSelect = 0;
 var customButton;
 var btnCredits = document.getElementById("btnCreditsId");
 var lienObj = document.getElementById("lienDynamique");
 var btnSave = document.getElementById('btnSave');
-var mapListLeaflet = new Map();//liste de tout les objets affichable dans leaflet (sans restrictions graphiques), y sont présente en plus: les mipmaps et les vecteurs statiques (data, obj, rang, isActif)
 var mapListLocations = [];
-var texteCharg = 0;
-var contentCredits;
 var vecteurVisu = false;
 var limiteMarkercpt = 0;
 var firstAction = true;
 var holdInterval = null;
 var parentSelectOne = null;
 var parentSelectTwo = null;
-const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
+//const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
 //const limiteMarker = 1;
 //const limiteMarker = 10; //limite d'affichage de markers en meme temps// -1 = tous
+const limiteMarker = 100; //limite d'affichage de markers en meme temps// -1 = tous
 //const limiteMarker = 500; //limite d'affichage de markers en meme temps// -1 = tous
 //const limiteMarker = 1000; //limite d'affichage de markers en meme temps// -1 = tous
 const btnEditor = new hudButton1(document.getElementById("btnEditor"), document.getElementById("btnEditorContent"));
@@ -36,7 +33,7 @@ const MODE_ROTATION = 2;
 const MODE_ECHELLE = 3;
 const MODE_INSERTION = 4;
 const MODE_LINK = 5;
-//clique a l'exterieur de la liste pour fermer la liste des locations
+/**clique a l'exterieur de la liste pour fermer la liste des locations*/
 const cliqueOnExtFenetreToCloseHVL = () => {
   if(mode != MODE_INSERTION) mush.active();
 }
@@ -103,7 +100,20 @@ const MARKER_STATIC_MS = 4;
 const TEXTE = 5;
 const POLYLIGNE = 6;
 const leaflet = new LeafletMap();
-/**Vérifie pour l'image qu'elle est tracable*/
+
+function typetotxt(id){
+  switch(id){
+    case 0:  return "NULL";
+    case 1:  return "TILEMAP_DEFAULT";
+    case 2:  return "MARKER";
+    case 3:  return "IMAGE";
+    case 4:  return "MARKER_STATIC_MS";
+    case 5:  return "TEXTE";
+    case 6:  return "POLYLIGNE";
+    default: return "NULL";
+  }
+}
+/**Vérifie pour l'objet qu'il est tracable, ne traite pas les icones du MS*/
 async function calculTracabilite(data, limite) {
   try{
     var imagePosInScreenVar_ = await objectPosInScreen(data);//vérifie si l'objet devrait etre dans l'écran
@@ -156,19 +166,16 @@ async function actualiseMap(mapobj, limite){
     for(const [key, value] of mapobj) await updatePosOnLLObj(value);
     await mush.updatePos();
     //
-    for(const [key, value] of mapobj) {
-      //console.log("lecture de: value:" + value.type);
-      await calculTracabilite(value, limite);
-    }
-    await mush.calculTracabiliteMarkers();
+    for(const [key, value] of mapobj) await calculTracabilite(value, limite);
+    await mush.calculTracabilite();
     //
     for(const [key, value] of mapobj) await leaflet.updateObj(value);
     await mush.updateObj();
     //
     await checkDoublon(mapobj);
-    //stats();
+    await updateLog("end map update");
   } catch(error) {
-    console.error("Erreur dans l'actualisation de map");
+    console.error("Erreur dans l'actualisation de map: " + error);
     throw error;
   }
 }
@@ -281,16 +288,16 @@ function isTwoLayerSimilarContent(layer1, layer2, isAbsoluteTest){
   else return false;
 }
 /**cette fonction doit etre spam pour fonctionner */
-async function changePosObj(){
+async function dynamicTransformObj(){
   if(mush.imageFocus() == null || await mush.getCleImageFocus() == null || mode == MODE_LECTURE) return;
   var points = await mapListLeaflet.get(await mush.getCleImageFocus());
   switch (actionEnCours) {
          case ACTDEPLACEMENT:
-    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(mousePos.x - points.vPos.xAbs(), mousePos.y - points.vPos.yAbs()));
+    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(leaflet.mousePos.x - points.vPos.xAbs(), leaflet.mousePos.y - points.vPos.yAbs()));
   break; case ACTROTATION:
     if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
       var vFromMouseToObj = new V2F();
-      vFromMouseToObj.setXY(mousePos.xAbs() - points.vPos.xAbs(), mousePos.yAbs() - points.vPos.yAbs())
+      vFromMouseToObj.setXY(leaflet.mousePos.xAbs() - points.vPos.xAbs(), leaflet.mousePos.yAbs() - points.vPos.yAbs())
       var angleActu = vFromMouseToObj.getAngle();
       if(firstAction){
         mouseLngLastState = angleActu;
@@ -306,8 +313,8 @@ async function changePosObj(){
     }
   break; case ACTECHELLE:
     if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
-      var moveX = (mousePos.x - mouseLngLastState);
-      mouseLngLastState = mousePos.x;
+      var moveX = (leaflet.mousePos.x - mouseLngLastState);
+      mouseLngLastState = leaflet.mousePos.x;
       if(moveX > 0.5) moveX = 0.5;
       if(moveX < -0.5) moveX = -0.5;
       //moveX = -moveX; //changement de sens du curseur
@@ -404,17 +411,17 @@ async function sauvegarder(){
   content = await google.generateList(mapListLeaflet);
   fenetreModale.openWithContent(content);
 }
-//
-function click(e){//click détecté sur la carte
+/**click détecté sur la carte*/
+function click(e){
 }
-//
+/**fonction executé toute les 100ms soit lors d'un appui long (ACTDEPLACEMENT, ACTROTATION, ACTECHELLE), soit lors du placement d'un objet depuis la liste (ACTDEPLACEMENT)*/
 function spam(){
-  if(mush.imageFocus()) changePosObj();
+  if(mush.imageFocus()) dynamicTransformObj();
 }
-//
+/**action de l'enfoncement*/
 function down(e){
   firstAction = true;
-  mush.MouseAppui(e);
+  mush.mouseAppui(e);
 }
 //
 async function downConfirmee(e){
@@ -527,13 +534,5 @@ function createDataObjet(type){
     throw new Error("type non reconnu: ", type);
   }
   return data;
-}
-/**libère le thread principal pour permettre d'autre actions, notamment l'actualisation de l'affichage*/
-async function refreshEcran(){
-  await new Promise(resolve => setTimeout(resolve, 0));
-}
-async function mainTxt(txt){
-  texteCharg.innerHTML = txt;
-  await refreshEcran();
 }
 //
