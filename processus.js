@@ -4,36 +4,40 @@
 //IMAGE:            donnees = [cmd,obj,isActif,plan],"",[vOrigine,vPos,vAngle],[p1,p2,p3,p4],[url,title,author,website,imageSize,imageL,isMipmap]
 //TEXT:             donnees = [cmd,obj,isActif,plan],"",[vOrigine,vPos,vAngle],[p1,p2,p3,p4],[url-canva,size,text,lOnLeaflet,angle]
 //MARKERSTATIC:     donnees = [cmd,obj,isActif,plan],"",[vOrigine,vPos,vAngle],[l],[url]
-/**fonction d'initialisation principale du programme */
+/**fonction d'initialisation principale du programme*/
 const google = new GestionGoogle();
+var texteCharg = 0;
+var logCharg = 0;
+var mode = MODE_LECTURE;
+var ssId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; //Mario Games / Maps / Locations
+//var ssId = '1ZAvRc7k-sphLJzj01WYmweG17yX49qNy542Kzkr01So'; //MARIO MAP TEST
+var apik = 'AIzaSyCTYinHSnmthpQKkNeRcNMnyk1a8lTyzaA';
+var lienTxt = "https://docs.google.com/spreadsheets/d/" + ssId;
+var contentCredits =  `<p><h3>Sources</h3>
+<b>Code source:</b><br>
+<a href=https://github.com/Guipsou01/leaflet1>https://github.com/Guipsou01/leaflet1</a><br>
+<b>Map data:</b><br>
+<a href=` + lienTxt + ` target="_blank">` + lienTxt + `</a>
+<p><h3>Credits:</h3>
+<b>Leaflet:</b><br>
+Free library to use map<br>
+<b>Marioverse discord server:</b><br>
+General informations about the lore of mario.<br>
+<b>Illuminarchie:</b><br>
+Discovery of Leaflet, also made a map using Leaflet here !:<br>
+<a href="https://www.archie-harrodine.com/mario-map-project/">https://www.archie-harrodine.com/mario-map-project/</a><br>
+<b>All map makers!:</b><br>
+Credits for each Map by clicking on it.</p>`;
+var contentSave = `<h3 style="text-align: center;">Attention</h3>
+<p style="text-align: center;">Sauvegarder la page crééra ou écrasera un onglet 'OUTPUT' sur la fiche Google Sheets.<br></p>
+<p style="text-align: center;"><a href="#" style="cursor: pointer; text-decoration: underline;" onclick="sauvegarder()">Sauvegarder</a></p><br>`;
+var mapListLeaflet = new Map();//liste de tout les objets affichable dans leaflet (sans restrictions graphiques), y sont présente en plus: les mipmaps et les vecteurs statiques (data, obj, rang, isActif)
+/**structure globale du code */
 async function corps(){
   disableAllbuttons();
-  var ssId = '1m_iRhOs_1ii_1ECTX-Zuv9I0f6kMAE97ErYTy1ScP24'; //Mario Games / Maps / Locations
-  //var ssId = '1ZAvRc7k-sphLJzj01WYmweG17yX49qNy542Kzkr01So'; //MARIO MAP TEST
-  var apik = 'AIzaSyCTYinHSnmthpQKkNeRcNMnyk1a8lTyzaA';
   //FICHIER REGROUPANT LES FONCTIONS GENERALES AU PROGRAMME
   google.getSpreadsheetId(ssId);
   google.getApiKey(apik);
-  var lienTxt = "https://docs.google.com/spreadsheets/d/" + ssId;
-  contentCredits =  `<p><h3>Sources</h3>
-  <b>Code source:</b><br>
-  <a href=https://github.com/Guipsou01/leaflet1>https://github.com/Guipsou01/leaflet1</a><br>
-  <b>Map data:</b><br>
-  <a href=` + lienTxt + ` target="_blank">` + lienTxt + `</a>
-  <p><h3>Credits:</h3>
-  <b>Leaflet:</b><br>
-  Free library to use map<br>
-  <b>Marioverse discord server:</b><br>
-  General informations about the lore of mario.<br>
-  <b>Illuminarchie:</b><br>
-  Discovery of Leaflet, also made a map using Leaflet here !:<br>
-  <a href="https://www.archie-harrodine.com/mario-map-project/">https://www.archie-harrodine.com/mario-map-project/</a><br>
-  <b>All map makers!:</b><br>
-  Credits for each Map by clicking on it.</p>`;
-  contentSave = `<h3 style="text-align: center;">Attention</h3>
-  <p style="text-align: center;">Sauvegarder la page crééra ou écrasera un onglet 'OUTPUT' sur la fiche Google Sheets.<br></p>
-  <p style="text-align: center;"><a href="#" style="cursor: pointer; text-decoration: underline;" onclick="sauvegarder()">Sauvegarder</a></p><br>
-  `;
   btnVecteur.setText("Parent (off)");
   btnVecteur.setFunctionOnClick(cliqueSurBtnVecteur);
   btnListLocations.setText("Locations List");
@@ -43,15 +47,17 @@ async function corps(){
   btnListLocations.setFunctionOnRenderForEachSlot(renderForEachSlotLoc);
   btnListMaps.setFunctionOnClickListe(cliqueSurSlotListe2);
   texteCharg = document.getElementById('texteInfo');
+  logCharg = document.getElementById('log');
   //console.log("[initialisation] Démarrage");
-  texteCharg.innerHTML = "Démarrage";
+  texteCharg.innerHTML = "Startup";
+  logCharg.innerHTML = "*";
   //initialisation map leaflet
   //requette et enregistrement donnees google 
   btnEditor.setText("Editor (off)");
   btnEditor.setFunctionOnClick(cliqueSurBtnEditor);
   btnListMaps.setText("Loading...");
   //console.log("[initialisation] Recération données onglets google (lent)...");
-  texteCharg.innerHTML = "Recupération données onglets google...";
+  texteCharg.innerHTML = "Recovering Google tabs data...";
   var sheetNamesLocations = await google.getNomFeuilles();
   var sheetNames = await google.filterWithPrefixe("Leaflet_");//ne garde que les feuilles commencant par Leaflet_
   sheetNameFocus = (sheetNames == null) ? "Google table not found" : (sheetNameFocus = (sheetNames.length == 0) ? "No tab found" : sheetNames[0]);
@@ -80,27 +86,53 @@ async function resetAllMapContent(){
       await mainTxt("No tab found on the Google Table, check name and header (Leaflet_xxx needed)");
       return;
     }
-    await mainTxt("Suppression de tous les objets de la carte...");
+    await mainTxt("Deleting all map objects...");
     await leaflet.removeAllObj(true);
-    await mainTxt("Suppression du contenu des listes Leaflet...");
+    await mainTxt("Deleting all Leaflet list contents...");
     objListLeaflet = [];
-    await mainTxt("Remplissage du contenu des listes Google...");
+    await mainTxt("Google lists content filling...");
     await google.lecture(mapListLeaflet);
     //traceListeLeaflet();
-    await mainTxt("Initialisation des données du Mushroom selector...");
+    await mainTxt("Mushroom Selector data initialization...");
     await mush.init();
-    await mainTxt("Actualisation des données de la carte...");
+    await mainTxt("Map data update...");
     await linkObjects(mapListLeaflet);
     await mainTxt("Suppression du contenu des listes Google...");
     await leaflet.removeAllObj(false);
     await actualiseMap(mapListLeaflet, true);
-    await mainTxt("Initialisation terminée...");
+    await mainTxt("Initialization done...");
     await mainTxt("");
     await mush.active();
-    //leaflet.stats();
+    //updateLog(txt)
     await checkDoublon(mapListLeaflet);
     //btnListLocations.setName("Locations List (" + await compareMapListLocations() + " / " + mapListLocations.length + ")");
     btnListLocations.setListe(mapListLocations,1);
     activeAllButtons();
+  } catch (error) {console.error("Error:", error);}
+}
+
+async function traceMap(map){
+  console.log("[tracage map]");
+  console.log(map);
+  for(const [key, dataaModif] of map) {
+    console.log(dataaModif);
+    console.log(dataaModif.objet[0])
+  }
+  console.log("[fin tracage]");
+}
+async function mainTxt(txt){
+  texteCharg.innerHTML = txt;
+  await refreshEcran();
+}
+/**libère le thread principal pour permettre d'autre actions, notamment l'actualisation de l'affichage*/
+async function refreshEcran(){
+  await new Promise(resolve => setTimeout(resolve, 0));
+}
+function updateLog(txt){
+  //
+  try{
+  var LLlog = leaflet.stats();
+  //console.log(LLlog);
+  logCharg.innerHTML = txt + `<br>` + LLlog;
   } catch (error) {console.error("Error:", error);}
 }
