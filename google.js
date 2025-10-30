@@ -189,11 +189,11 @@ class GestionGoogle{
                 if(data != null) {
                     mapListGoogle.set(generateCleUnique(), data);
                     cpt++;
-                    await mainTxt(`Remplissage du contenu des liste Google: ${cpt} / ${donneesGoogleUnOnglet.length - 1}`);
+                    await mainTxt(`Google lists content filling: ${cpt} / ${donneesGoogleUnOnglet.length - 1}`);
                 }
             });
             await Promise.all(promesses1);
-            await mainTxt("Remplissage du contenu des listes Leaflet...");
+            await mainTxt("Leaflet lists content filling...");
             //await checkDoublon();
             //traitement des commandes simplifiées et remplissage de la liste Leaflet
             cpt = 0;
@@ -202,7 +202,7 @@ class GestionGoogle{
                 if(retour != null){
                     if(retour.objet[0] != null)  map.set(retour.key, retour);//image normale
                     cpt++;
-                    await mainTxt(`Remplissage du contenu des listes Leaflet: ${cpt} / ${mapListGoogle.size - 1}`);
+                    await mainTxt(`Leaflet lists content filling: ${cpt} / ${mapListGoogle.size - 1}`);
                 }
             });
             await Promise.all(promesses2);//Attendre que toutes les promesses soient terminées pour éxécuter la suite
