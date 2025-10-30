@@ -10,6 +10,7 @@ const COL_TITLE = 8;
 const COL_AUTHOR = 9;
 const COL_SITE = 10;
 const COL_TYPE = 0;
+/**classe de lecture de fichier google*/
 class GestionGoogle{
     //FICHIER REGROUPANT LES FONCTIONS GENERALES AU PROGRAMME
     #spreadsheetId = null;
