@@ -7,14 +7,15 @@ class LeafletMap {
   #holdIntervalLL;
   #disableClick = false;
   #tiles = null;
+  #zoomlvl = 2;
   #isMouseDown = false; // État de la souris
   #isHandlingClickOrHold = false; //Empêche la double détection
   #mousePos = new V2F(0,0);//position de la souris en temps réel
   #mapObjetOnLLData = new Map();
   #map;
   constructor() {
-    this.#map = L.map('map').setView([0, 0], 13).setZoom(2);
-    this.#map.on('moveend', () => actualiseMap(mapListLeaflet, true));
+    this.#map = L.map('map').setView([0, 0], 13).setZoom(this.#zoomlvl);
+    this.#map.on('moveend', () => this.moveDetected());
     //
     // Exécuter cette fonction chaque fois que la variable est mise à jour
     this.#map.on('mousemove', (e) => {
@@ -60,9 +61,17 @@ class LeafletMap {
       this.#isHandlingClickOrHold = false; //Réinitialise l'état*/
     });
   }
+  /**execute la fonction à chaque mouvement leaflet */
+  moveDetected(){
+    this.#zoomlvl = this.#map.getZoom();
+    actualiseMap(mapListLeaflet, true);
+  }
   /*retourne la liste des objets actuellement affichés sur la map*/
   getMap(){
     return this.#mapObjetOnLLData;
+  }
+  getZoomLvl(){
+    return this.#zoomlvl;
   }
   /**affiche une fenetre de texte html aux coordonnés précisés*/
   popup(data, content){
@@ -293,9 +302,7 @@ class LeafletMap {
     for(i = 0; i < 7; i++){//pour chaque type d'objets possibles...
       typenb = 0;
       for (const [key, data] of this.#mapObjetOnLLData) {
-        if(data.type == i) {
-            typenb++;
-        }
+        if(data.type == i) {typenb++;}
       }
       if(typenb > 0) typeslist += ` ` + typetotxt(i) + `:` + typenb;
     }
@@ -303,7 +310,8 @@ class LeafletMap {
     var log = 
     `nb elements on the map: ` + nb + 
     `<br> nb elements on the leaflet list: ` + nb2 + 
-    `<br>types: ` + typeslist;
+    `<br>types: ` + typeslist +
+    `<br>zoom level: ` + this.#zoomlvl;
     return log;
   }
   /**retourne les coordonnés des bords de la carte leaflet (long lat coords)*/
@@ -365,7 +373,7 @@ async function generateObject(data){
             ,null];
           }
         break; case MARKER:
-          data.url = await resizeImage(data.url, new V2F(30, 30));
+          data.url = await resizeImage(data.url, new V2F(50, 50));
           //data.url = data.urlmm;
           var greenIcon = L.icon({
             iconUrl:      data.url,
