@@ -17,8 +17,8 @@ var parentSelectTwo = null;
 //const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
 //const limiteMarker = 1;
 //const limiteMarker = 10; //limite d'affichage de markers en meme temps// -1 = tous
-const limiteMarker = 100; //limite d'affichage de markers en meme temps// -1 = tous
-//const limiteMarker = 500; //limite d'affichage de markers en meme temps// -1 = tous
+//const limiteMarker = 100; //limite d'affichage de markers en meme temps// -1 = tous
+const limiteMarker = 500; //limite d'affichage de markers en meme temps// -1 = tous
 //const limiteMarker = 1000; //limite d'affichage de markers en meme temps// -1 = tous
 const btnEditor = new hudButton1(document.getElementById("btnEditor"), document.getElementById("btnEditorContent"));
 const btnVecteur = new hudButton1(document.getElementById("btnVecteur"), document.getElementById("btnVecteurContent"));
@@ -113,6 +113,15 @@ function typetotxt(id){
     default: return "NULL";
   }
 }
+async function zoomNonCompatibleAvecLod(data){
+  if(data?.lod == null) return false;
+  if(data?.lod === "Main World") return false;
+  if(data?.lod === "World" && await leaflet.getZoomLvl() > 3) return false;
+  if(await leaflet.getZoomLvl() > 6) return false;
+  //console.log(data.lod);
+  //console.log(await leaflet.getZoomLvl());
+  return true;
+}
 /**Vérifie pour l'objet qu'il est tracable, ne traite pas les icones du MS*/
 async function calculTracabilite(data, limite) {
   try{
@@ -125,7 +134,9 @@ async function calculTracabilite(data, limite) {
         //if(leaflet.getZoomLvl() >= 8) nvEtat = imagePosInScreenVar_;
         //else nvEtat = false;
         if(limiteMarker == -1) limite = false;
-        nvEtat = limite ? ((limiteMarkercpt <= limiteMarker) ? imagePosInScreenVar_ : false) : imagePosInScreenVar_;
+        nvEtat = imagePosInScreenVar_;
+        if(await zoomNonCompatibleAvecLod(data)) nvEtat = false;
+        if(limite) if(limiteMarkercpt > limiteMarker) nvEtat = false;
         if(limite) if(nvEtat == true) limiteMarkercpt++;
       break; case IMAGE:
         //nvEtat = (imagePosInScreenVar_ && !data.isMipmap) ? !isTooShort_ : (imagePosInScreenVar_ && data.isMipmap) ? isTooShort_ : !imagePosInScreenVar_ ? false : nvEtat;
@@ -160,9 +171,7 @@ async function calculTracabilite(data, limite) {
 async function actualiseMap(mapobj, limite){
   try{
     limiteMarkercpt = 0;
-    if(!mapobj || typeof mapobj[Symbol.iterator] !== 'function') {
-      throw new TypeError("mapobj n'est pas un itérable valide.");
-    }
+    if(!mapobj || typeof mapobj[Symbol.iterator] !== 'function') {throw new TypeError("mapobj n'est pas un itérable valide.");}
     for(const [key, value] of mapobj) await updatePosOnLLObj(value);
     await mush.updatePos();
     //
@@ -200,9 +209,7 @@ async function linkObjects(map){
             }
             else dataaModif.vPos.setPo(objetfocus.vPos);
           }
-          catch(err) {
-            console.error("Error: au niveau des objets ", dataaModif.titre, " et ", objetfocus.titre, ": " + err);
-          }
+          catch(err) {console.error("Error: au niveau des objets ", dataaModif.titre, " et ", objetfocus.titre, ": " + err);}
         }
         var vecteur = dataaModif.objetVecteur;
         vecteur.vPos = dataaModif.vPos;
@@ -292,9 +299,9 @@ async function dynamicTransformObj(){
   if(mush.imageFocus() == null || await mush.getCleImageFocus() == null || mode == MODE_LECTURE) return;
   var points = await mapListLeaflet.get(await mush.getCleImageFocus());
   switch (actionEnCours) {
-         case ACTDEPLACEMENT:
+    case ACTDEPLACEMENT:
     if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(leaflet.mousePos.x - points.vPos.xAbs(), leaflet.mousePos.y - points.vPos.yAbs()));
-  break; case ACTROTATION:
+    break; case ACTROTATION:
     if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
       var vFromMouseToObj = new V2F();
       vFromMouseToObj.setXY(leaflet.mousePos.xAbs() - points.vPos.xAbs(), leaflet.mousePos.yAbs() - points.vPos.yAbs())
@@ -504,6 +511,7 @@ function createDataObjet(type){
     vPos4: new V2F(0,0),
     objetParent: null,
     auteur: null,
+    lod: null,
     site: null,
     coupleMapLink: null,
     mipmapActif: false,
