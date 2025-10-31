@@ -104,6 +104,7 @@ class LeafletMap {
   }
   /**active le déplacement*/
   async enableDragging(){
+    console.log("active");
     await this.#map.dragging.enable();
   }
   /**désactive le déplacement*/
@@ -113,6 +114,26 @@ class LeafletMap {
   /**verifie que le déplacement est désactivé*/
   async isDraggingDisabled(){
     return !this.#map.dragging;
+  }
+  async disableInteractions(){
+    this.#map.dragging.disable();
+    this.#map.scrollWheelZoom.disable();
+    this.#map.doubleClickZoom.disable();
+    this.#map.boxZoom.disable();
+    this.#map.keyboard.disable();
+    this.#map.touchZoom.disable();
+    this.#map.zoomControl.remove();
+    this.#map.getContainer().style.pointerEvents = 'none';
+  }
+  async enableInteractions(){
+    this.#map.dragging.enable();
+    this.#map.scrollWheelZoom.enable();
+    this.#map.doubleClickZoom.enable();
+    this.#map.boxZoom.enable();
+    this.#map.keyboard.enable();
+    this.#map.touchZoom.enable();
+    this.#map.zoomControl.addTo(this.#map);
+    this.#map.getContainer().style.pointerEvents = 'auto'; //✅
   }
   /**ferme les fenetres leaflet si ouvertes*/
   closePopup(){
