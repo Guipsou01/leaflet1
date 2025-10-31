@@ -71,6 +71,7 @@ async function corps(){
 async function resetAllMapContent(){
   try{
     await disableAllbuttons();
+    await leaflet.disableInteractions();
     mapListLeaflet.clear();
     //desactivation bouton reset
     actionEnCours = ACTNULL;
@@ -107,7 +108,8 @@ async function resetAllMapContent(){
     await checkDoublon(mapListLeaflet);
     //btnListLocations.setName("Locations List (" + await compareMapListLocations() + " / " + mapListLocations.length + ")");
     btnListLocations.setListe(mapListLocations,1);
-    activeAllButtons();
+    await leaflet.enableInteractions();
+    await activeAllButtons();
   } catch (error) {console.error("Error:", error);}
 }
 
