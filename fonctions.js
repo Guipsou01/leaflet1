@@ -116,8 +116,8 @@ function typetotxt(id){
 async function zoomNonCompatibleAvecLod(data){
   if(data?.lod == null) return false;
   if(data?.lod === "Main World") return false;
-  if(data?.lod === "World" && await leaflet.getZoomLvl() > 3) return false;
-  if(await leaflet.getZoomLvl() > 6) return false;
+  if(data?.lod === "World" && await leaflet.getZoomLvl() > 2) return false;
+  if(await leaflet.getZoomLvl() > 5) return false;
   //console.log(data.lod);
   //console.log(await leaflet.getZoomLvl());
   return true;
