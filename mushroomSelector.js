@@ -157,6 +157,7 @@ class MushroomSelector {
     if(data.vPos != null) texte += "GCS rel. position: " + data.vPos.toTxtSimple(3) + "<br>GCS abs. position: " + data.vPos.toTxtSimpleAbs(3) + "<br>";
     if(data.vAngle != null) texte += "Angle: " + data.vAngle.getAngle() + "<br>";
     if(data.vOrigine != null && data.vOrigine != "null") texte += "Child of: " + data.vOrigine + "<br>";
+    if(data.lod != null) texte += "Location type: " + data.lod + "<br>";
     leaflet.popup(data, texte);
     //else await this.reset();
     }
