@@ -8,6 +8,7 @@ const COL_PARENT = 6;
 const COL_URL = 7;
 const COL_TITLE = 8;
 const COL_AUTHOR = 9;
+const COL_LOD = 9;
 const COL_SITE = 10;
 const COL_TYPE = 0;
 /**classe de lecture de fichier google*/
@@ -92,6 +93,7 @@ class GestionGoogle{
                                 data.vPos = p;
                                 l.y = imagePtee.height / imagePtee.width * l.x;//calcul automatique de rapport
                                 data.url = lignes[COL_URL];
+                                data.lod = lignes[COL_LOD];
                                 data.vTaille = l;
                                 data.titre = lignes[COL_TITLE];
                                 //
