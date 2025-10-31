@@ -10,6 +10,7 @@ const shroom = "https://mario.wiki.gallery/images/8/8b/SuperMushroom_-_2D_art.sv
 const goldenShroom = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/ed991cf4-7c8c-4530-b6ba-a3abf3ab2eae/dd36ts2-3a51d2ff-7f4d-41a4-8e60-2cbaa0ae1bc8.png/v1/fill/w_900,h_900/super_mario__golden_mushroom_2d_by_joshuat1306_dd36ts2-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9OTAwIiwicGF0aCI6IlwvZlwvZWQ5OTFjZjQtN2M4Yy00NTMwLWI2YmEtYTNhYmYzYWIyZWFlXC9kZDM2dHMyLTNhNTFkMmZmLTdmNGQtNDFhNC04ZTYwLTJjYmFhMGFlMWJjOC5wbmciLCJ3aWR0aCI6Ijw9OTAwIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.eLm9NIiTXusG0laKtKWmLiqZNSK1PcWbEJY039obNhY";
 var actionEnCours = ACTNULL;
 class MushroomSelector {
+  #desactiveDragging = false;
   #cleImageFocus = null;
   #isActif = false;
   #allmarkersdata = [null,null,null,null,null,null,null,null,null,null];
@@ -102,7 +103,8 @@ class MushroomSelector {
   }
   /**actions de relachement de souris */
   async mouseRelache(){
-    if(this.#isActif) if(leaflet.isDraggingDisabled()) {
+    if(this.#isActif) if(this.#desactiveDragging) {
+      this.#desactiveDragging = false;
       leaflet.enableDragging();
       actionEnCours = ACTNULL;
     }
@@ -118,6 +120,7 @@ class MushroomSelector {
         await this.calculTracabilite();
         await this.updateObj();
         if((mode == MODE_DEPLACEMENT || mode == MODE_ROTATION || mode == MODE_ECHELLE || mode == MODE_INSERTION || mode == MODE_LINK) && this.#cleImageFocus != null && actionEnCours == ACTNULL){
+          this.#desactiveDragging = true;
           await leaflet.disableDragging();
                if(mode == MODE_DEPLACEMENT) actionEnCours = ACTDEPLACEMENT;
           else if(mode == MODE_ROTATION)    actionEnCours = ACTROTATION;
