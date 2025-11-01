@@ -298,14 +298,14 @@ function isTwoLayerSimilarContent(layer1, layer2, isAbsoluteTest){
 /**cette fonction doit etre spam pour fonctionner */
 async function dynamicTransformObj(){
   if(mush.imageFocus() == null || await mush.getCleImageFocus() == null || mode == MODE_LECTURE) return;
-  var points = await mapListLeaflet.get(await mush.getCleImageFocus());
+  var data = await mapListLeaflet.get(await mush.getCleImageFocus());
   switch (actionEnCours) {
     case ACTDEPLACEMENT:
-    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(leaflet.getMousePos().x - points.vPos.xAbs(), leaflet.getMousePos().y - points.vPos.yAbs()));
+    if(data.type == IMAGE || data.type == TEXTE || data.type == MARKER) data.vPos.addV(new V2F(leaflet.getMousePos().x - data.vPos.xAbs(), leaflet.getMousePos().y - data.vPos.yAbs()));
     break; case ACTROTATION:
-    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
+    if(data.type == IMAGE || data.type == TEXTE || data.type == MARKER){
       var vFromMouseToObj = new V2F();
-      vFromMouseToObj.setXY(leaflet.getMousePos().xAbs() - points.vPos.xAbs(), leaflet.getMousePos().yAbs() - points.vPos.yAbs())
+      vFromMouseToObj.setXY(leaflet.getMousePos().xAbs() - data.vPos.xAbs(), leaflet.getMousePos().yAbs() - data.vPos.yAbs())
       var angleActu = vFromMouseToObj.getAngle();
       if(firstAction){
         mouseLngLastState = angleActu;
@@ -315,12 +315,10 @@ async function dynamicTransformObj(){
       mouseLngLastState = angleActu;
       var angleDecal = new V2F(0,0);
       angleDecal.setAngle(- anglediff);
-      //points.vAngle.setAngle(angleActu);
-      points.vAngle.setAngle(points.vAngle.getAngle() - anglediff);
-      points.vPos.applyRotationDecalageOnEnfants(angleDecal);
+      data.vAngle.applyRotationDecalage(angleDecal);
     }
   break; case ACTECHELLE:
-    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
+    if(data.type == IMAGE || data.type == TEXTE || data.type == MARKER){
       var moveX = (leaflet.getMousePos().x - mouseLngLastState);
       mouseLngLastState = leaflet.getMousePos().x;
       if(moveX > 0.5) moveX = 0.5;
@@ -328,15 +326,13 @@ async function dynamicTransformObj(){
       //moveX = -moveX; //changement de sens du curseur
       moveX = moveX / 3; //reduction de sensibilité
       moveX = 1 + moveX; // entre 0.5 et 1.5 de variation
-      points.vTaille.x *= moveX;
-      points.vTaille.y *= moveX;
-      points.vPos.applyScaleDecalageOnEnfants(moveX);
+      data.vPos.applyScaleDecalageOnEnfants(moveX);
     }
   break;
   }
   //
-  var liste = points.vPos.getData();
-  await updatePosOnLLObj(points);
+  var liste = data.vPos.getData();
+  await updatePosOnLLObj(data);
   if(liste != null) for(var i = 0; i < liste.length; i++){
     if(liste[i] != null) {
       if(liste[i].type == IMAGE && liste[i].coupleMapLink != null) await updatePosOnLLObj(mapListLeaflet.get(liste[i].coupleMapLink));
