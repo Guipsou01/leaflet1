@@ -42,11 +42,11 @@ const clickSurBtnLocations = () => {
   mush.reset();
   mush.disable();
 }
-//action sur tout les boutons de la liste a chaque refresh
+/**action sur tout les boutons de la liste a chaque refresh*/
 const renderForEachSlotLoc = (ligneFocus, btnHTML) => {
   if(findKeyWithChampValide("titre",btnHTML.textContent) != null) btnHTML.disabled = true;
 }
-//appui sur le bouton vecteur
+/**appui sur le bouton vecteur*/
 const cliqueSurBtnVecteur = () => {
   vecteurVisu = !vecteurVisu;
   if(vecteurVisu) btnVecteur.setText("Parent (on)");
@@ -54,7 +54,7 @@ const cliqueSurBtnVecteur = () => {
   leaflet.actualiseMapTracee();
   //actualiseMap(mapListLeaflet, false);
 }
-//appui sur le bouton editeur
+/**appui sur le bouton editeur*/
 const cliqueSurBtnEditor = () => {
   switch (mode) {
            case MODE_LECTURE:     mode = MODE_DEPLACEMENT;  btnEditor.setText("Editor (move)");
@@ -78,10 +78,11 @@ const cliqueSurSlotListe2 = (option, id, item) => {
   //this.#fermerListe();
 };
 const cliqueSurSlotListe1 = (liste, id, item) => {
-  item.disabled = true;
+  //item.disabled = true;
+  disableAllbuttons();
   mode = MODE_INSERTION;
   btnEditor.setText("Insertion");
-  btnEditor.disable();
+  //btnEditor.disable();
   //creation objet
   createMarker((liste[1]), (liste[5]));
   actionEnCours = ACTDEPLACEMENT;
@@ -300,11 +301,11 @@ async function dynamicTransformObj(){
   var points = await mapListLeaflet.get(await mush.getCleImageFocus());
   switch (actionEnCours) {
     case ACTDEPLACEMENT:
-    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(leaflet.mousePos.x - points.vPos.xAbs(), leaflet.mousePos.y - points.vPos.yAbs()));
+    if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER) points.vPos.addV(new V2F(leaflet.getMousePos().x - points.vPos.xAbs(), leaflet.getMousePos().y - points.vPos.yAbs()));
     break; case ACTROTATION:
     if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
       var vFromMouseToObj = new V2F();
-      vFromMouseToObj.setXY(leaflet.mousePos.xAbs() - points.vPos.xAbs(), leaflet.mousePos.yAbs() - points.vPos.yAbs())
+      vFromMouseToObj.setXY(leaflet.getMousePos().xAbs() - points.vPos.xAbs(), leaflet.getMousePos().yAbs() - points.vPos.yAbs())
       var angleActu = vFromMouseToObj.getAngle();
       if(firstAction){
         mouseLngLastState = angleActu;
@@ -320,8 +321,8 @@ async function dynamicTransformObj(){
     }
   break; case ACTECHELLE:
     if(points.type == IMAGE || points.type == TEXTE || points.type == MARKER){
-      var moveX = (leaflet.mousePos.x - mouseLngLastState);
-      mouseLngLastState = leaflet.mousePos.x;
+      var moveX = (leaflet.getMousePos().x - mouseLngLastState);
+      mouseLngLastState = leaflet.getMousePos().x;
       if(moveX > 0.5) moveX = 0.5;
       if(moveX < -0.5) moveX = -0.5;
       //moveX = -moveX; //changement de sens du curseur
@@ -407,7 +408,7 @@ async function createMarker(nom, url){
       clearInterval(holdInterval);//stop le spam
       mode = MODE_LECTURE;
       btnEditor.setText("Editor (off)");
-      btnEditor.active();
+      activeAllButtons();
     }
   });
 }
@@ -425,12 +426,14 @@ function click(e){
 function spam(){
   if(mush.imageFocus()) dynamicTransformObj();
 }
-/**action de l'enfoncement*/
+/**detecte un appui à l'enfoncement*/
 function down(e){
   firstAction = true;
   mush.mouseAppui(e);
+  btnListMaps.fermerListe();
+  btnListLocations.fermerListe();
 }
-//
+/**detecte un appui long, ne s'execute qu'une fois par appui*/
 async function downConfirmee(e){
   if(await mush.getCleImageFocus() != null && mode == MODE_LINK) {
     if(parentSelectOne == null) parentSelectOne = await mush.getCleImageFocus();
@@ -479,11 +482,35 @@ async function resetParentMode(){
   parentSelectOne = null;
   leaflet.closePopup();
 }
+/**change la couleur du cadre autour d'un objet à partir de sa clé*/
 function changeCarreColor(key, color){
   if(key == null) return;
   var carre1 = mapListLeaflet.get(key).objetCarre;
   if(carre1 == null) return;
   for(var i = 0; i < carre1.length; i++) carre1[i].objet[0].setStyle({color: color});
+}
+/**fonction de debug tracage map*/
+async function traceMap(map){
+  console.log("[tracage map]");
+  console.log(map);
+  for(const [key, dataaModif] of map) {
+    console.log(dataaModif);
+    console.log(dataaModif.objet[0])
+  }
+  console.log("[fin tracage]");
+}
+/**change le titre*/
+async function mainTxt(txt){
+  texteCharg.innerHTML = txt;
+  await refreshEcran();
+}
+/**met à jour l'affichage du texte log*/
+function updateLog(txt){
+  try{
+  var LLlog = leaflet.stats();
+  //console.log(LLlog);
+  logCharg.innerHTML = txt + `<br>` + LLlog;
+  } catch (error) {console.error("Error:", error);}
 }
 //
 function up(e){if(mush.isActif()) mush.mouseRelache();}
