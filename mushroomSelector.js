@@ -126,7 +126,7 @@ class MushroomSelector {
           else if(mode == MODE_ROTATION)    actionEnCours = ACTROTATION;
           else if(mode == MODE_ECHELLE)     actionEnCours = ACTECHELLE;
           else if(mode == MODE_LINK)        actionEnCours = ACTLINK;
-          mouseLngLastState = leaflet.mousePos.x;
+          mouseLngLastState = leaflet.getMousePos().x;
         }
         else if((mode == MODE_LECTURE) && this.#cleImageFocus != null && actionEnCours == ACTNULL) await this.affichepopupobjet(await mapListLeaflet.get(await this.getCleImageFocus()));
       }
