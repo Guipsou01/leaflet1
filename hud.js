@@ -29,13 +29,13 @@ class hudList {
     //Fermer la liste déroulante quand on clique en dehors
     window.onclick = (event) => {
       if(!this.#btn.contains(event.target) && !this.#virtualList.contains(event.target)) {
-        this.#fermerListe();
+        this.fermerListe();
         if(this.#fctOnClickExt != null) this.#fctOnClickExt();
       }
     };
   }
   //erreurSiNotFunction(fct){}
-  #fermerListe(){//Masquer la liste après sélection
+  fermerListe(){//Masquer la liste après sélection
     this.#virtualList.style.display = 'none';
   }
   #changeEtatListe(){//alterne entre état caché et affiché en fonction de l'etat
@@ -52,6 +52,7 @@ class hudList {
   }
   disable(){
     this.#btn.disabled = true;
+    this.fermerListe();
   }
   getElemByRg(rg){
     return this.#listetotale[rg];
@@ -82,7 +83,7 @@ class hudList {
       if(this.#fctOnRenderForEachSlot != null) this.#fctOnRenderForEachSlot(this.#listetotale[i], slot);
       slot.onclick = () => {
         if(this.#fctOnClickLst != null) this.#fctOnClickLst(this.#listetotale[i], i, slot);
-        this.#fermerListe();
+        this.fermerListe();
       };
       this.#listContent.appendChild(slot); //Ajouter le lien à la liste
     };
