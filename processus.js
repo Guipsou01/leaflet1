@@ -112,29 +112,7 @@ async function resetAllMapContent(){
     await activeAllButtons();
   } catch (error) {console.error("Error:", error);}
 }
-
-async function traceMap(map){
-  console.log("[tracage map]");
-  console.log(map);
-  for(const [key, dataaModif] of map) {
-    console.log(dataaModif);
-    console.log(dataaModif.objet[0])
-  }
-  console.log("[fin tracage]");
-}
-async function mainTxt(txt){
-  texteCharg.innerHTML = txt;
-  await refreshEcran();
-}
 /**libère le thread principal pour permettre d'autre actions, notamment l'actualisation de l'affichage*/
 async function refreshEcran(){
   await new Promise(resolve => setTimeout(resolve, 0));
-}
-function updateLog(txt){
-  //
-  try{
-  var LLlog = leaflet.stats();
-  //console.log(LLlog);
-  logCharg.innerHTML = txt + `<br>` + LLlog;
-  } catch (error) {console.error("Error:", error);}
 }
