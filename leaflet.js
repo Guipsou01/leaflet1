@@ -61,6 +61,9 @@ class LeafletMap {
       this.#isHandlingClickOrHold = false; //Réinitialise l'état*/
     });
   }
+  getMousePos(){
+    return leaflet.#mousePos;
+  }
   /**execute la fonction à chaque mouvement leaflet */
   moveDetected(){
     this.#zoomlvl = this.#map.getZoom();
