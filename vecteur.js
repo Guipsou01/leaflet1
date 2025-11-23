@@ -183,17 +183,20 @@ class V2F{
         this.y = Math.sin(angleRad) * dist;
         //applique la nouvelle valeur
     }
-    /**applique un décalage de rotation depuis un vecteur éxistant en gardant la distance originale*/
+    /**applique un décalage de rotation depuis un vecteur éxistant ou un float en gardant la distance originale*/
     applyRotationDecalage(v2f){
-        if(v2f == null) throw new Error("v2f nul");
-        if (!(v2f instanceof V2F)) throw new Error("Le paramètre doit être une instance de V2F.");
+        try{
         //enregistre la distance actuelle
         const dist = Math.sqrt(this.x ** 2 + this.y ** 2);
         const angle = this.getAngle();
-        const angleExterne = v2f.getAngle();
+             if(v2f == null) throw new Error("v2f nul");
+        else if(v2f instanceof V2F)   var angleExterne = v2f.getAngle();
+        else if(typeof v2f === "number") var angleExterne = v2f;
+        else throw new Error("Le paramètre doit être une instance de V2F ou un float: " + v2f);
         const newAngle = (angle + angleExterne) % 360;
         this.x = Math.cos(degToRad(newAngle)) * dist;
         this.y = Math.sin(degToRad(newAngle)) * dist;
+        } catch (error) {console.error("Error:", error);}
     }
     /**applique un décalage de rotation uniquement sur parents*/
     applyRotationDecalageOnEnfants(v2f){
@@ -248,5 +251,10 @@ class V2F{
     /**enregistre le vecteur en parametre en tant que vecteur de transformation (sert pour les calculs de position absolue)*/
     setTransfo(v2f){
         this.pt = v2f;
+    }
+    /**retourne un parametre de transformation si existant, retourne null si aucun*/
+    getTransfo(){
+        if(this.pt != null) return this.pt;
+        return null;
     }
 }
