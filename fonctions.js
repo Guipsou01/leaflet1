@@ -1,5 +1,4 @@
 //<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.polylinedecorator/1.8.1/leaflet.polylineDecorator.min.js"></script>
-const unfound_img = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4fqKc0vxzBaLA0Vy9Edx9TIKzaCHxt_vHhImlsbNBeKkpZdu_nfYCLivgQSSOut8jB9c&usqp=CAU';
 var sheetNameFocus;
 var mouseLngLastState = 0;
 var rgImgSelect = 0;
@@ -14,25 +13,18 @@ var firstAction = true;
 var holdInterval = null;
 var parentSelectOne = null;
 var parentSelectTwo = null;
-//const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
-//const limiteMarker = 1;
-//const limiteMarker = 10; //limite d'affichage de markers en meme temps// -1 = tous
-//const limiteMarker = 100; //limite d'affichage de markers en meme temps// -1 = tous
-const limiteMarker = 500; //limite d'affichage de markers en meme temps// -1 = tous
-//const limiteMarker = 1000; //limite d'affichage de markers en meme temps// -1 = tous
 const btnEditor = new hudButton1(document.getElementById("btnEditor"), document.getElementById("btnEditorContent"));
 const btnVecteur = new hudButton1(document.getElementById("btnVecteur"), document.getElementById("btnVecteurContent"));
 const btnListMaps = new hudList(document.getElementById('btnMaps'), document.getElementById('btnMapsList'), false);
 const btnListLocations = new hudList(document.getElementById('btnLocations'), document.getElementById('btnLocationsList'), true);
-const mush = new MushroomSelector();
 const fenetreModale = new FenetreModale(document.getElementById('fenetreCredits-content'), document.getElementsByClassName("croixCreditsId")[0], document.getElementById("fenetreCreditsId"));
-
 const MODE_LECTURE = 0;
 const MODE_DEPLACEMENT = 1;
 const MODE_ROTATION = 2;
 const MODE_ECHELLE = 3;
 const MODE_INSERTION = 4;
 const MODE_LINK = 5;
+//data:type, objet, objetVecteur, objetVecteurMipmap, objetCarre, actif, key, keymm, vOrigine, vPos, vAngle, titre, url, urlmm, vPos1, vPos2, vPos3, vPos4, objetParent, auteur, lod, site, coupleMapLink, mipmapActif, vImgTaille,plan*/
 /**clique a l'exterieur de la liste pour fermer la liste des locations*/
 const cliqueOnExtFenetreToCloseHVL = () => {
   if(mode != MODE_INSERTION) mush.active();
@@ -68,7 +60,7 @@ const cliqueSurBtnEditor = () => {
   resetParentMode();
   //console.log(mapListLeaflet.size);
   //actualiseMap(leaflet.getMap(), true);ICI
-  actualiseMap(mapListLeaflet, true);
+  //actualiseMap(mapListLeaflet, true);
 }
 const cliqueSurSlotListe2 = (option, id, item) => {
   //event.preventDefault(); //Empêche le comportement par défaut du lien
@@ -123,10 +115,16 @@ async function zoomNonCompatibleAvecLod(data){
   //console.log(await leaflet.getZoomLvl());
   return true;
 }
-/**Vérifie pour l'objet qu'il est tracable, ne traite pas les icones du MS*/
+/**Vérifie pour l'objet qu'il est tracable, ne traite pas les icones du MS <br> limite (nombre): valeur max d'objets affichés*/
 async function calculTracabilite(data, limite) {
+  const limiteMarker = -1; //limite d'affichage de markers en meme temps// -1 = tous
+  //const limiteMarker = 1;
+  //const limiteMarker = 10; //limite d'affichage de markers en meme temps// -1 = tous
+  //const limiteMarker = 100; //limite d'affichage de markers en meme temps// -1 = tous
+  //const limiteMarker = 500; //limite d'affichage de markers en meme temps// -1 = tous
+  //const limiteMarker = 1000; //limite d'affichage de markers en meme temps// -1 = tous
   try{
-    var imagePosInScreenVar_ = await objectPosInScreen(data);//vérifie si l'objet devrait etre dans l'écran
+    var imagePosInScreenVar_ = true;
     var nvEtat = data.actif;
     switch (data.type){
       case TILEMAP_DEFAULT:
@@ -136,7 +134,8 @@ async function calculTracabilite(data, limite) {
         //else nvEtat = false;
         if(limiteMarker == -1) limite = false;
         nvEtat = imagePosInScreenVar_;
-        if(await zoomNonCompatibleAvecLod(data)) nvEtat = false;
+        //if(await zoomNonCompatibleAvecLod(data)) nvEtat = false;
+        if((data.lod !== "World") && (data.lod !== "Main World") && (data.lod !== "Sports")) nvEtat = false;
         if(limite) if(limiteMarkercpt > limiteMarker) nvEtat = false;
         if(limite) if(nvEtat == true) limiteMarkercpt++;
       break; case IMAGE:
@@ -168,19 +167,17 @@ async function calculTracabilite(data, limite) {
 }
 //============LEAFLETLIST==============
 //=========GOOGLE=========
-/**supprime tout les éléments, vérifie le tracage de nouveaux éléments d'une map en parametre et les insère dans leaflet, mapobj: liste visée, limite: prend en compte une limite de markers*/
+/**supprime tout les éléments, vérifie le tracage de nouveaux éléments d'une map en parametre et les insère dans leaflet <br> mapobj: liste visée <br> limite: prend en compte une limite de markers*/
 async function actualiseMap(mapobj, limite){
+  //console.log("actumap");
   try{
     limiteMarkercpt = 0;
     if(!mapobj || typeof mapobj[Symbol.iterator] !== 'function') {throw new TypeError("mapobj n'est pas un itérable valide.");}
     for(const [key, value] of mapobj) await updatePosOnLLObj(value);
-    await mush.updatePos();
     //
     for(const [key, value] of mapobj) await calculTracabilite(value, limite);
-    await mush.calculTracabilite();
     //
     for(const [key, value] of mapobj) await leaflet.updateObj(value);
-    await mush.updateObj();
     //
     await checkDoublon(mapobj);
     await updateLog("end map update");
@@ -205,7 +202,7 @@ async function linkObjects(map){
           if(dataaModif.vPos.getPo3() != null && objetfocus.vPos != null) if(dataaModif.vPos.po === objetfocus.vPos) throw new Error("L'objet ne peut pas se focus lui meme: " + dataaModif.vPos.po + " " + objetfocus.vPos + ", objet: " + dataaModif.titre + ", objet: " + dataaModif.vPos.getData());
           try{
             if(objetfocus == null) {
-              console.log("Error: objet focus non défini pour " + dataaModif.titre);
+              console.log("Objet focus non défini pour " + dataaModif.titre + ", application sans origine.");
               dataaModif.vOrigine = null;
             }
             else dataaModif.vPos.setPo(objetfocus.vPos);
@@ -301,13 +298,27 @@ async function dynamicTransformObj(){
   var data = await mapListLeaflet.get(await mush.getCleImageFocus());
   switch (actionEnCours) {
     case ACTDEPLACEMENT:
-    if(data.type == IMAGE || data.type == TEXTE || data.type == MARKER) data.vPos.addV(new V2F(leaflet.getMousePos().x - data.vPos.xAbs(), leaflet.getMousePos().y - data.vPos.yAbs()));
+    if(data.type == IMAGE || data.type == TEXTE || data.type == MARKER) {
+      //data.vPos.addV(new V2F(leaflet.getMousePos().x - data.vPos.xAbs(), leaflet.getMousePos().y - data.vPos.yAbs()));
+      var dpx = leaflet.getMousePos().x - data.vPos.xAbs();
+      var dpy = leaflet.getMousePos().y - data.vPos.yAbs();
+      var vFromMouseToObj = new V2F();
+      vFromMouseToObj.setXY(dpx,dpy);
+      vFromMouseToObj.applyRotationDecalage(- data.vPos.ptAbs().getAngle());
+      //console.log(data.vPos.getTransfo().getAngle());
+      //vFromMouseToObj.applyRotationDecalage()
+      data.vPos.addV(new V2F(vFromMouseToObj.x, vFromMouseToObj.y));
+    }
     break; case ACTROTATION:
     if(data.type == IMAGE || data.type == TEXTE || data.type == MARKER){
+      //creation d'un vecteur differentiel entre position souris et position objet
       var vFromMouseToObj = new V2F();
-      vFromMouseToObj.setXY(leaflet.getMousePos().xAbs() - data.vPos.xAbs(), leaflet.getMousePos().yAbs() - data.vPos.yAbs())
+      vFromMouseToObj.setXY(leaflet.getMousePos().xAbs() - data.vPos.xAbs(), leaflet.getMousePos().yAbs() - data.vPos.yAbs());
+      //obtient l'angle de rotation
       var angleActu = vFromMouseToObj.getAngle();
+      console.log(angleActu);
       if(firstAction){
+        console.log("firstaction");
         mouseLngLastState = angleActu;
         firstAction = false;
       }
@@ -396,7 +407,6 @@ async function createMarker(nom, url){
   await mapListLeaflet.set(data.key, data);
   //await linkObjects(mapListLeaflet);
   await leaflet.removeAllObj(false);
-  limiteMarkercpt = 0;
   await actualiseMap(mapListLeaflet, false);
   mush.insertObjetFocus(data.key);
   data.objet[0].on('click', function() {
@@ -416,43 +426,17 @@ async function sauvegarder(){
   fenetreModale.openWithContent(content);
 }
 /**click détecté sur la carte*/
-function click(e){
-}
+function click(e){}
 /**fonction executé toute les 100ms soit lors d'un appui long (ACTDEPLACEMENT, ACTROTATION, ACTECHELLE), soit lors du placement d'un objet depuis la liste (ACTDEPLACEMENT)*/
-function spam(){
-  if(mush.imageFocus()) dynamicTransformObj();
-}
+function spam(){}
 /**detecte un appui à l'enfoncement*/
 function down(e){
   firstAction = true;
-  mush.mouseAppui(e);
   btnListMaps.fermerListe();
   btnListLocations.fermerListe();
 }
 /**detecte un appui long, ne s'execute qu'une fois par appui*/
 async function downConfirmee(e){
-  if(await mush.getCleImageFocus() != null && mode == MODE_LINK) {
-    if(parentSelectOne == null) parentSelectOne = await mush.getCleImageFocus();
-    else {
-      if(parentSelectTwo != null) changeCarreColor(parentSelectTwo, 'red');
-      parentSelectTwo = await mush.getCleImageFocus();
-    }
-    if(parentSelectTwo == parentSelectOne) {
-      resetParentMode();
-      return;
-    }
-    if(parentSelectOne != null){
-      changeCarreColor(parentSelectOne, 'blue');
-    }
-    if(parentSelectTwo != null){
-      var txt = mapListLeaflet.get(parentSelectOne).titre + "<br><center>TO</center>" + mapListLeaflet.get(parentSelectTwo).titre;
-      if(mapListLeaflet.get(parentSelectTwo).vPos.detectCirculariteBool(mapListLeaflet.get(parentSelectOne).vPos)) txt += "<br><center>Circular detection</center>";
-      else txt += `<br><center><a href="#" style="cursor: pointer; text-decoration: underline;" onclick="changeDependances()">[OK]</a></center>`;
-      leaflet.popup(await mapListLeaflet.get(parentSelectTwo), txt);
-      changeCarreColor(parentSelectTwo, 'yellow');
-    }
-    await actualiseMap(mapListLeaflet, false);
-  }
 }
 async function changeDependances(){
   var obj1 = mapListLeaflet.get(parentSelectOne);
@@ -509,7 +493,8 @@ function updateLog(txt){
   } catch (error) {console.error("Error:", error);}
 }
 //
-function up(e){if(mush.isActif()) mush.mouseRelache();}
+function up(e){
+}
 //DATA//
 /**génère une liste des données d'objet (dépend du type)*/
 function createDataObjet(type){
@@ -538,7 +523,8 @@ function createDataObjet(type){
     site: null,
     coupleMapLink: null,
     mipmapActif: false,
-    vImgTaille: null
+    vImgTaille: null,
+    plan: 0
   }
   switch (type) {
     case IMAGE:
