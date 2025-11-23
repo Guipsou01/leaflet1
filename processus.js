@@ -6,6 +6,7 @@
 //MARKERSTATIC:     donnees = [cmd,obj,isActif,plan],"",[vOrigine,vPos,vAngle],[l],[url]
 /**fonction d'initialisation principale du programme*/
 const google = new GestionGoogle();
+const unfound_img = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4fqKc0vxzBaLA0Vy9Edx9TIKzaCHxt_vHhImlsbNBeKkpZdu_nfYCLivgQSSOut8jB9c&usqp=CAU';
 var texteCharg = 0;
 var logCharg = 0;
 var mode = MODE_LECTURE;
@@ -31,54 +32,57 @@ Credits for each Map by clicking on it.</p>`;
 var contentSave = `<h3 style="text-align: center;">Attention</h3>
 <p style="text-align: center;">Sauvegarder la page crééra ou écrasera un onglet 'OUTPUT' sur la fiche Google Sheets.<br></p>
 <p style="text-align: center;"><a href="#" style="cursor: pointer; text-decoration: underline;" onclick="sauvegarder()">Sauvegarder</a></p><br>`;
-var mapListLeaflet = new Map();//liste de tout les objets affichable dans leaflet (sans restrictions graphiques), y sont présente en plus: les mipmaps et les vecteurs statiques (data, obj, rang, isActif)
+/**liste de tout les objets affichable dans leaflet (sans restrictions graphiques), y sont présente en plus: les mipmaps et les vecteurs statiques (data, obj, rang, isActif)*/
+var mapListLeaflet = new Map();
 /**structure globale du code */
 async function corps(){
-  disableAllbuttons();
-  //FICHIER REGROUPANT LES FONCTIONS GENERALES AU PROGRAMME
-  google.getSpreadsheetId(ssId);
-  google.getApiKey(apik);
-  btnVecteur.setText("Parent (off)");
-  btnVecteur.setFunctionOnClick(cliqueSurBtnVecteur);
-  btnListLocations.setText("Locations List");
-  btnListLocations.setFunctionOnClickBtn(clickSurBtnLocations);
-  btnListLocations.setFunctionOnClickListe(cliqueSurSlotListe1);
-  btnListLocations.setFunctionOnClickExtFenetreWhenAffichee(cliqueOnExtFenetreToCloseHVL);
-  btnListLocations.setFunctionOnRenderForEachSlot(renderForEachSlotLoc);
-  btnListMaps.setFunctionOnClickListe(cliqueSurSlotListe2);
-  texteCharg = document.getElementById('texteInfo');
-  logCharg = document.getElementById('log');
-  //console.log("[initialisation] Démarrage");
-  texteCharg.innerHTML = "Startup";
-  logCharg.innerHTML = "*";
-  //initialisation map leaflet
-  //requette et enregistrement donnees google 
-  btnEditor.setText("Editor (off)");
-  btnEditor.setFunctionOnClick(cliqueSurBtnEditor);
-  btnListMaps.setText("Loading...");
-  //console.log("[initialisation] Recération données onglets google (lent)...");
-  texteCharg.innerHTML = "Recovering Google tabs data...";
-  var sheetNamesLocations = await google.getNomFeuilles();
-  var sheetNames = await google.filterWithPrefixe("Leaflet_");//ne garde que les feuilles commencant par Leaflet_
-  sheetNameFocus = (sheetNames == null) ? "Google table not found" : (sheetNameFocus = (sheetNames.length == 0) ? "No tab found" : sheetNames[0]);
-  if(isTablContainElem(sheetNamesLocations,"Locations")) await remplissageLocations();
-  //console.log("[initialisation] Init sélecteur...");
-  mainTxt("Initialisation sélecteur...");
-  await createSelectorMaps();
-  resetAllMapContent();
+  try{
+    disableAllbuttons();
+    //FICHIER REGROUPANT LES FONCTIONS GENERALES AU PROGRAMME
+    google.getSpreadsheetId(ssId);
+    google.getApiKey(apik);
+    btnVecteur.setText("Parent (off)");
+    btnVecteur.setFunctionOnClick(cliqueSurBtnVecteur);
+    btnListLocations.setText("Locations List");
+    btnListLocations.setFunctionOnClickBtn(clickSurBtnLocations);
+    btnListLocations.setFunctionOnClickListe(cliqueSurSlotListe1);
+    btnListLocations.setFunctionOnClickExtFenetreWhenAffichee(cliqueOnExtFenetreToCloseHVL);
+    btnListLocations.setFunctionOnRenderForEachSlot(renderForEachSlotLoc);
+    btnListMaps.setFunctionOnClickListe(cliqueSurSlotListe2);
+    texteCharg = document.getElementById('texteInfo');
+    logCharg = document.getElementById('log');
+    //console.log("[initialisation] Démarrage");
+    texteCharg.innerHTML = "Startup";
+    logCharg.innerHTML = "*";
+    //initialisation map leaflet
+    //requette et enregistrement donnees google 
+    btnEditor.setText("Editor (off)");
+    btnEditor.setFunctionOnClick(cliqueSurBtnEditor);
+    btnListMaps.setText("Loading...");
+    //console.log("[initialisation] Recération données onglets google (lent)...");
+    texteCharg.innerHTML = "Recovering Google tabs data...";
+    var sheetNamesLocations = await google.getNomFeuilles();
+    var sheetNames = await google.filterWithPrefixe("Leaflet_");//ne garde que les feuilles commencant par Leaflet_
+    sheetNameFocus = (sheetNames == null) ? "Google table not found" : (sheetNameFocus = (sheetNames.length == 0) ? "No tab found" : sheetNames[0]);
+    if(isTablContainElem(sheetNamesLocations,"Locations")) await remplissageLocations();
+    //console.log("[initialisation] Init sélecteur...");
+    mainTxt("Initialisation sélecteur...");
+    await createSelectorMaps();
+    resetAllMapContent();
+  }
+  catch(err) {console.error("Error: au niveau des objets ", dataaModif.titre, " et ", objetfocus.titre, ": " + err);}
 }
 /**réinitialise le contenu général de la carte + interface */
 async function resetAllMapContent(){
   try{
+    leaflet.updateListAChaqueMove(false);
     await disableAllbuttons();
     await leaflet.disableInteractions();
     mapListLeaflet.clear();
     //desactivation bouton reset
-    actionEnCours = ACTNULL;
     mode = MODE_LECTURE;
     btnEditor.setText("Editor (off)");
     //récupération des données de la feuille google visée
-    await mush.reset();
     if(await google.getNomFeuillesSansRequette() == null){
       await mainTxt("No Google Table found, check table id and permission");
       return;
@@ -95,7 +99,6 @@ async function resetAllMapContent(){
     await google.lecture(mapListLeaflet);
     //traceListeLeaflet();
     await mainTxt("Mushroom Selector data initialization...");
-    await mush.init();
     await mainTxt("Map data update...");
     await linkObjects(mapListLeaflet);
     await mainTxt("Suppression du contenu des listes Google...");
@@ -103,7 +106,6 @@ async function resetAllMapContent(){
     await actualiseMap(mapListLeaflet, true);
     await mainTxt("Initialization done...");
     await mainTxt("");
-    await mush.active();
     //updateLog(txt)
     await checkDoublon(mapListLeaflet);
     //btnListLocations.setName("Locations List (" + await compareMapListLocations() + " / " + mapListLocations.length + ")");
