@@ -19,7 +19,11 @@ html, body {
 .leaflet-popup-content {
     word-wrap: break-word;
     white-space: normal;
-    max-width: 200px;
+    max-width: none;
+}
+.leaflet-popup-content-wrapper {
+  max-width: none;
+  width:100%;
 }
 #btnCreditsId {
     position: absolute;
