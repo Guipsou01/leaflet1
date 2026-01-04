@@ -1,4 +1,4 @@
-//INTERFACE SELECTEUR
+//INTERFACE, PARTIE PROTOTYPE COMMUNE
 class hudList {
   #btn = null;//bouton principal
   #listContent = null;//liste d'objets html
@@ -64,7 +64,7 @@ class hudList {
     var startIndex = 0;
     var endIndex = this.#listetotale.length;
     if(this.#vlOn){
-    //Crée un conteneur interne pour la liste
+      //Crée un conteneur interne pour la liste
       const scrollTop = this.#virtualList.scrollTop;
       startIndex = Math.floor(scrollTop / this.#slotLy);
       endIndex = Math.min(startIndex + Math.ceil(this.#viewportLy / this.#slotLy) + 1, this.#listetotale.length);//nb elements + 1 pour débord
@@ -132,15 +132,9 @@ class hudButton1{
   }
   //erreurSiNotFunction(fct){}
   /**Applique un texte au bouton de sélecteur */
-  setText(txt){
-    this.#btn.textContent = txt;
-  }
-  active(){
-    this.#btn.disabled = false;
-  }
-  disable(){
-    this.#btn.disabled = true;
-  }
+  setText(txt)  {this.#btn.textContent = txt;}
+  active()      {this.#btn.disabled = false;}
+  disable()     {this.#btn.disabled = true;}
   /**prend une fonction en paramètre et l'éxécute lors de l'appui sur le bouton. Fonction sans paramètre uniquement*/
   setFunctionOnClick(fct) {
     //erreurSiNotFunction(fct); 
