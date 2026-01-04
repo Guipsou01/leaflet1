@@ -196,7 +196,9 @@ class LeafletMapBase {
         color: 'red',
         weight: 1,
         opacity: 0.75,
-        fillOpacity: 0
+        fillOpacity: 0,
+        interactive: false,
+        pane: 'vecteurs'
     }).addTo(this.#calqueGrille);
   }
 }
