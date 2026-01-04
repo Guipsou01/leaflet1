@@ -8,13 +8,13 @@ function average(a, b, c, d){
     return ((a + b + c + d) / 4);
 };
 /**Fonction pour créer une image texte à partir d'un string (utilise un canvas), retourne l'url du canvas*/
-function textToImage(text, width, height) {
+function textToImage(text, width, height, color) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
     // Options de style pour le texte
-    context.fillStyle = 'red';
+    context.fillStyle = color;
     context.font = '40px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
@@ -34,7 +34,7 @@ async function traceMap(map){
 }
 /**retourne true si le tableau contient l'élément donné*/
 function isTablContainElem(tabl, elem){
-    for(i = 0; i < tabl.length; i++) if(tabl[i] == elem) return true;
+    for(let i = 0; i < tabl.length; i++) if(tabl[i] == elem) return true;
     return false;
 }
 /**retourne truc si l'objet est convertissable en float */
