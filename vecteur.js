@@ -28,8 +28,10 @@ class V2F{
     }
     /**récupère l'adresse du point d'origine. Si inexistant, retourne une erreur [Pt]*/
     getPo(){
-        if(this.#po == null) throw new Error("po est nul");
-        return this.#po;
+        try{
+            if(this.#po == null) throw new Error("po est nul");
+            return this.#po;
+        } catch (error) {console.error("Error:", error);}
     }
     /**récupère l'adresse du point d'origine. Si inexistant, retourne un nouveau vecteur 0 [Pt]*/
     getPo2(){
@@ -43,6 +45,15 @@ class V2F{
     set po(v2f) {
         return this.setPo(v2f);
     }
+    /**insert un point considéré comme absolu qui représentera le nouveau vecteur sans toucher à po [noPt]*/
+    setPabs(v2f) {
+        if(this.#po == null) this.setXY(v2f.x, v2f.y);
+        else{
+            var vct = new V2F(v2f.x - this.getPo2().pAbs().x, v2f.y - this.getPo2().pAbs().y);
+            vct.applyRotationDecalage(- this.ptAbs().getAngle()); //decalage d'angle si pt existant
+            this.setXY(vct.x, vct.y); 
+        }
+    }
     /**applique un v2f en tant qu'origine de ce point [Pt]*/
     setPo(v2f){
         if (v2f !== null && !(v2f instanceof V2F)) throw new Error("L'origine doit être une instance de V2F ou null.");
@@ -50,9 +61,15 @@ class V2F{
         this.#po = v2f;
         v2f.pe.push(this);
     }
+    /**applique un nouveau point x y [noPt]*/
     setXY(x,y){
         this.setX(x);
         this.setY(y);
+    }
+    /**renseigne un pt local ainsi qu'un point d'origine [noPt] [Pt]*/
+    setPlocPo(pLoc, pO){
+      this.setPo(pO);
+      this.set(pLoc);
     }
     setX(x){
         this.x = x;
@@ -72,7 +89,7 @@ class V2F{
     p() {
         return new V2F(this.#x,this.#y);
     }
-    /**ajoute la valeur d'un autre vecteur. erreur si v2f externe null. [noPt]*/
+    /**ajoute la valeur d'un autre vecteur. Ne modifie pas l'angle original. erreur si v2f externe null. [noPt]*/
     addV(v2f){
         if (!(v2f instanceof V2F)) throw new Error("Le paramètre doit être une instance de V2F.");
         this.x += v2f.x;
@@ -86,18 +103,17 @@ class V2F{
         this.y += y;
         return this;//chainage
     };
-    pAbsProcess(angleLoc){
+    pAbsProcess(){
         if(this.#po == null) return new V2F(this.#x,this.#y);
         else {
-            var posAbs;
-            var posAbs2 = new V2F(0,0);
-            posAbs2.setXY(this.#x, this.#y);
-            if(this.#po.pt != null) posAbs2.applyRotationDecalage(this.#po.ptAbs());
-            posAbs = this.#po.pAbsProcess(0); 
-            var retour = posAbs.addV(posAbs2);
-            return retour;
+            var vLoc1 = new V2F(0,0);
+            vLoc1.setXY(this.#x, this.#y);
+            if(this.#po.pt != null) vLoc1.applyRotationDecalage(this.#po.ptAbs());//ajoute l'angle absolu de po à vLoc1, représentation angulaire du vecteur local
+            var vLoc2 = this.#po.pAbsProcess();//efectue les memes calculs d'angle sur po et le met dans vLoc2
+            return vLoc2.addV(vLoc1);//ajoute les distances de vLoc2 et vLoc1 sans recalcul d'angle
         }
     }
+    /**récupere le vecteur de transformation absolu (dans le cas des angle, ajoute tout les angles de transformation des vecteur enfants)*/
     ptAbs(){
         var ptAbs = new V2F(0,0);
         ptAbs.setAngle(0);
@@ -115,9 +131,9 @@ class V2F{
             return new V2F(0,0).setAngle(30);
         }*/
     }
-    /**retourne le point absolu du vecteur [noPt]*/
+    /**retourne le point absolu du vecteur comprenant les calculs d'angle [noPt]*/
     pAbs() {
-        return (this.pAbsProcess(0));
+        return (this.pAbsProcess());
     }
     /**retourne la position absolue de x*/
     xAbs() {
@@ -183,18 +199,17 @@ class V2F{
         this.y = Math.sin(angleRad) * dist;
         //applique la nouvelle valeur
     }
-    /**applique un décalage de rotation depuis un vecteur éxistant ou un float en gardant la distance originale*/
+    /**applique un décalage de rotation depuis un vecteur éxistant ou un float en gardant la distance originale (ajoute un angle)*/
     applyRotationDecalage(v2f){
         try{
-        //enregistre la distance actuelle
-        const dist = Math.sqrt(this.x ** 2 + this.y ** 2);
-        const angle = this.getAngle();
+        const dist = Math.sqrt(this.x ** 2 + this.y ** 2);//enregistre la distance actuelle
+        const angle = this.getAngle(); //enregiste l'angle depuis l'état actuel du vecteur
              if(v2f == null) throw new Error("v2f nul");
-        else if(v2f instanceof V2F)   var angleExterne = v2f.getAngle();
-        else if(typeof v2f === "number") var angleExterne = v2f;
+        else if(v2f instanceof V2F) var angleExterne = v2f.getAngle(); //enregistre l'angle supplémentaire en paramètre
+        else if(typeof v2f === "number") var angleExterne = v2f; //enregistre l'angle supplémentaire en paramètre
         else throw new Error("Le paramètre doit être une instance de V2F ou un float: " + v2f);
-        const newAngle = (angle + angleExterne) % 360;
-        this.x = Math.cos(degToRad(newAngle)) * dist;
+        const newAngle = (angle + angleExterne) % 360; //ajoute l'angle du vecteur original et celui en paramètre dans une nouvelle variable
+        this.x = Math.cos(degToRad(newAngle)) * dist; //applique le nouvel angle sur le vecteur actuel
         this.y = Math.sin(degToRad(newAngle)) * dist;
         } catch (error) {console.error("Error:", error);}
     }
@@ -230,6 +245,12 @@ class V2F{
     nbParents(){
         return this.#pe.length;
     }
+    /**supprime l'enfant correspondant*/
+    removePe(v2f){
+        for(var i = 0; i < this.#pe.length; i++){
+            if(this.#pe[i] != null) if(this.#pe[i] === v2f) this.#pe[i] = null;
+        }
+    }   
     /**applique un objet lié au vecteur*/
     setData(val){
         this.#data = val;
@@ -252,9 +273,27 @@ class V2F{
     setTransfo(v2f){
         this.pt = v2f;
     }
+    /**génère un nouveau parametre de transformation locale depuis un angle*/
+    setTransfoAngle(angle){
+        this.pt = new V2F(1,0);
+        this.pt.setAngle(angle);
+    }
     /**retourne un parametre de transformation si existant, retourne null si aucun*/
     getTransfo(){
         if(this.pt != null) return this.pt;
         return null;
+    }
+    /**change le po, la valeur et l'angle de transformation local pour que po change sans changer la valeur de pAbs avec transformations globales*/
+    changePo(nvxPo){
+        var oldPo = this.getPo3();
+        if(oldPo != null) oldPo.removePe(this);
+        var pt1 = nvxPo;
+        var differenceAngleFinal = this.ptAbs().getAngle() - pt1.ptAbs().getAngle();
+        var nouvelleDistanceX = this.pAbs().x - pt1.pAbs().x;
+        var nouvelleDistanceY = this.pAbs().y - pt1.pAbs().y;
+        this.setPo(pt1);
+        this.setXY(nouvelleDistanceX,nouvelleDistanceY);
+        this.setTransfoAngle(differenceAngleFinal);
+        this.applyRotationDecalage(- pt1.ptAbs().getAngle());
     }
 }
