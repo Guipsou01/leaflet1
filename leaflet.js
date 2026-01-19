@@ -5,7 +5,7 @@ class LeafletMapBase {
     mousePosOE = new V2F(0,0);//position de la souris en temps réel
     #disablePopups = false;
     clickOnLLObject = false;
-    grilleActive = true;
+    grilleActive = false;
     #calqueGrille = null;
     constructor() {
       this.#llMap = L.map('map', {preferCanvas: true}).setView([0, 0], 13).setZoom(this.llZoomlvl);
@@ -54,6 +54,7 @@ class LeafletMapBase {
     /**ferme les fenetres leaflet si ouvertes*/
     closePopup(){this.#llMap.closePopup();}
     getZoomLvl(){return this.llZoomlvl;}
+    setZoomLvl(zoom){this.llZoomlvl = zoom; this.#llMap.setZoom(this.llZoomlvl);}
     /**récupère la position long lat de la souris*/
     getMousePos(){return this.mousePos;}
     getLLMap(){return this.#llMap;}
@@ -356,7 +357,6 @@ async function objectPosInScreen(data) {
         if(data.type == TILEMAP_DEFAULT)   return true;
   else  if(data.type == IMAGE)             return (await leaflet.getMapBounds()).intersects([[toLLTabl(data.vPos3.pAbs())], [toLLTabl(data.vPos1.pAbs())]]);
   else  if(data.type == MARKER)            return (await leaflet.getMapBounds()).contains(toLLTabl(data.vPos));
-  else  if(data.type == MARKER_STATIC_MS)  return (await leaflet.getMapBounds()).contains([selectorPos.y, selectorPos.x])
   else  if(data.type == POLYLIGNE)         return true;
   return false;
 }
