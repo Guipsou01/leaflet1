@@ -121,7 +121,7 @@ async function lecture(){
     console.log(calqueObj);
   } catch (error) {console.error("Error:", error);}
 }
-/**fonction inutilisée*/
+/**fonction inutilisée, recherche un objet dans la liste des objets par son titre*/
 function findObjWithTitreValide(valeur){
   var retour = null;
   calqueObj.eachLayer(layer => {
@@ -135,6 +135,16 @@ function findDataWithTitreValide(valeur){
     if(data != null) if(data.titre == valeur) return data;
   };
   return null;
+}
+//
+function findLocation(txt){//trouve le lieu dans la map correspondant au texte demandé, et active son popup
+  console.log(txt);
+  var obj = findObjWithTitreValide(txt);
+  if(obj != undefined) {
+    leaflet.setZoomLvl(12);
+    leaflet.popup(obj._data.vPos, affichepopupobjet(obj._data));
+  }
+  else console.log("obj non trouvee");
 }
 //
 async function cliqueSurBtnVecteurLoc(){
@@ -152,7 +162,7 @@ calqueObj.on("mousedown", e => {
   if(!leaflet.isBig(e.layer)){
     leaflet.clickOnObject = true;
     leaflet.popup(e.layer._data.vPos, affichepopupobjet(e.layer._data));
-    mush.mouseDownSurObjet(e.layer);
+    mush.setObjFocus(e.layer);
   }
 });
 async function mouseDownDetectedOutsideObj(){
@@ -175,7 +185,7 @@ async function mapMoveEnd(){
     if(obj._data.type == MARKER) promises.push(updatePosOnLLObj(obj));
   });
   await Promise.all(promises);
-  if(mush.hasDataFocus()) mush.updatePosIconsOnFocusedData();
+  if(await mush.hasObjFocus()) mush.updatePosIconsOnFocusedData();
   updateLog();
 }
 function mouseDownConfirmee(){actionChangementParente();}
