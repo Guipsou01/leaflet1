@@ -24,8 +24,8 @@ function mouseUpDetectedIO(){
       clickTimer = null;
       //Si un appui long n'a pas été détecté
       if(!isHandlingClickOrHold) {mouseClick();}
-      else{mouseUp();}//console.log("relachement");
     }
+    mouseUp();//console.log("relachement");
     isHandlingClickOrHold = false; //Réinitialise l'état*/
 }
 function mouseDownDetectedIO(){
