@@ -27,6 +27,19 @@ Credits for each Map by clicking on it.</p>`;
 var contentSave = `<h3 style="text-align: center;">Attention</h3>
 <p style="text-align: center;">Sauvegarder la page crééra ou écrasera un onglet 'OUTPUT' sur la fiche Google Sheets.<br></p>
 <p style="text-align: center;"><a href="#" style="cursor: pointer; text-decoration: underline;" onclick="sauvegarder()">Sauvegarder</a></p><br>`;
+//
+const input = document.getElementById("champRecherche");
+
+input.addEventListener("input", () => {});//actu a chaque action sur btn recherche
+
+//actu quand appui sur entree sur btn recherche
+input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        findLocation(input.value);
+        input.blur(); //enlève le focus
+    }
+});
 /**Initialisation sélecteur de maps et remplissage de la liste des maps*/
 async function createSelectorMaps(){
   btnListMaps.setText(sheetNameFocus);
