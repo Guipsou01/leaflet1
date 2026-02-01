@@ -255,19 +255,56 @@ class V2F{
     setData(val){
         this.#data = val;
     }
-    /*retourne les objets liés de chaque vecteur sous forme de liste*/
     getData(){
+        return this.#data;
+    }
+    /*retourne les objets enfants liés au vecteur local sous forme de liste*/
+    getDataEnfants(){
         var liste = [];
-        liste.push(this.#data);
         for(var i = 0; i < this.#pe.length; i++){
             if(liste.length > 1000000) throw new Error("impossible de lire une famille de plus de 1000000 éléments");
-            if(this.#pe[i] != null) liste.push(...this.#pe[i].getData());
+            if(this.#pe[i] != null) if(this.#pe[i].#data != null) {
+                liste.push(this.#pe[i].#data);
+                const enfants = this.#pe[i].getDataEnfants();
+                if(enfants) liste.push(...enfants);
+            }
         }
         if(liste.length == 0){
             console.log("liste vide");
             return null;
         }
         else return liste;
+    }
+    /*retourne les objets enfants liés au vecteur local sous forme d'arborescence*/
+    getDataEnfantsArbo(){
+        var liste = [];
+        for(var i = 0; i < this.#pe.length; i++){
+            if(liste.length > 1000000) throw new Error("impossible de lire une famille de plus de 1000000 éléments");
+            if(this.#pe[i] != null) {
+                if(this.#pe[i].#data != null) liste.push(this.#pe[i].#data._data.titre);
+                const enfants = this.#pe[i].getDataEnfantsArbo();
+                if(enfants) liste.push(enfants);
+            }
+        }
+        if(liste.length == 0){
+            console.log("liste vide");
+            return null;
+        }
+        else return liste;
+    }
+    /* retourne les objets enfants liés au vecteur local sous forme d'arborescence */
+    getDataEnfantsArboToTxt(decal = "") {
+        let txt = "";
+        const decalLoc = decal + "|     ";
+
+        for (let i = 0; i < this.#pe.length; i++) {
+            const pe = this.#pe[i];
+            if (pe && pe.#data) {
+                txt += decalLoc + pe.#data._data.titre + "\n";
+                txt += pe.getDataEnfantsArboToTxt(decalLoc);
+            }
+        }
+        return txt;
     }
     /**enregistre le vecteur en parametre en tant que vecteur de transformation (sert pour les calculs de position absolue)*/
     setTransfo(v2f){
