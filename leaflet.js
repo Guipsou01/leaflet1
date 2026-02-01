@@ -343,7 +343,8 @@ async function generateObject(data){
         resolve(null);
       }
       else {
-        data.objet = objFin;
+        //data.objet = objFin;
+        objFin[0]._data = data;
         resolve(objFin[0]);
       }
     } catch (error) {
