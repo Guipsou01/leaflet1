@@ -53,7 +53,6 @@ function createDataObjet(type){
     key: generateCleUnique(),
     keymm: generateCleUnique(),
     txtOrigine: "",
-    vOrigine: null,
     vPos: new V2F(0,0),
     vAngle: null,
     titre: null,
@@ -208,7 +207,6 @@ function affichepopupobjet(data){
     const vTaille = data.vTaille;
     const vPos = data.vPos;
     const plan = data.plan;
-    const vOrigine = data.vOrigine;
     const lod = data.lod;
     //
     var texte = "";
@@ -224,8 +222,15 @@ function affichepopupobjet(data){
     if(type == IMAGE || type == TEXTE) texte += "Image size: " + vImgTaille.toTxtSimpleAbs(0) + "<br>Image scale:" + vTaille.toTxtSimpleAbs(3) + "<br>";
     if(vPos != null) texte += "GCS rel. position: " + vPos.toTxtSimple(3) + "<br>GCS abs. position: " + vPos.toTxtSimpleAbs(3) + "<br>";
     if(vPos.getTransfo() != null) texte += "Angle rel.: " + vPos.getTransfo().getAngle() + "<br>Angle abs.: " + vPos.ptAbs().getAngle() + "<br>";
-    texte += "Layer: " + plan + "<br>";
-    if(vOrigine != null) texte += "Child of: " + vOrigine.titre + "<br>";
+    //texte += "Layer: " + plan + "<br>";
+    if(vPos.getPo3() != null) texte += "Child of: " + vPos.getPo().getData()._data.titre + "<br>";
+    /*var lst = vPos.getDataEnfants();
+    if (lst != null) if(lst.length > 0) {
+      texte += "Parent of: <br>";
+      for(var i = 0; i < lst.length; i++){
+        if(lst[i] != null) if(lst[i]._data != null) texte += lst[i]._data.titre + "<br>";
+      }
+    }*/
     if(lod != null) texte += "Location type: " + lod + "<br>";
     return texte;
     //else await this.reset();
@@ -271,24 +276,40 @@ function textToType(txt){
 }
 //
 /**créé les dépendances pour la data sélectionné*/
-async function linkDatas(data){
+async function linkDatas(data, dataPack){
   try{
     if(data.txtOrigine != null) if(data.txtOrigine != '-' && data.txtOrigine != undefined && data.txtOrigine != "" && data.txtOrigine != "null") {
-      var datafocus = findDataWithTitreValide(data.txtOrigine);
+      var datafocus = findDataWithTitreValide(data.txtOrigine, dataPack);
       if(datafocus == null) console.log("[Link warn] Objet focus non trouvé ou non renseigné pour: " + data.titre + " vers " + data.txtOrigine + ", application sans origine.");
-      data.vOrigine = datafocus;
       if(data.vPos.getPo3() != null && datafocus.vPos != null) if(data.vPos.po === datafocus.vPos) throw new Error("L'objet ne peut pas se focus lui meme: " + data.vPos.po + " " + datafocus.vPos + ", objet: " + data.titre + ", objet: " + data.vPos.getData());
       try{
-        if(datafocus == null) {
-          console.log("Objet focus non défini pour " + data.titre + ", application sans origine.");
-          data.vOrigine = null;
-        }
-        else data.vPos.setPo(datafocus.vPos);
+        if(datafocus != null) data.vPos.setPo(datafocus.vPos);
       }
       catch(err) {console.error("Error: au niveau des objets ", data.titre, " et ", datafocus.titre, ": " + err);}
     }
   } catch (error) {console.error("Error:", error);}
 }
+/**fonction inutilisée, recherche un objet dans la liste des objets par son titre*/
+function findObjWithTitreValide(valeur){
+  var retour = null;
+  calqueObj.eachLayer(layer => {
+    if(retour != null) return;
+    if(layer._data.titre === valeur) retour = layer;
+  });
+  return retour;
+}
+function findDataWithTitreValide(valeur, dataPack){
+  for(const data of dataPack) {
+    if(data != null) if(data.titre == valeur) return data;
+  };
+  return null;
+}
+/**retourne null si data non trouvée dans la liste */
+/*function findDataWithTitreValide(valeur){
+  if((findKeyWithChampValide("titre", valeur) == null)) return null;
+  return ((mapListLeaflet.get(findKeyWithChampValide("titre", valeur)))._data);
+}*/
+/**lis le contenu de l'onglet visé et remplis la map en parametre*/
 async function sauvegarder(){
   await fenetreModale.close();
   //await google.ecriture()
@@ -357,7 +378,7 @@ async function dynamicTransform(data, objfocus, actionEnCours){
     if(actionEnCours == MODE_DEPLACEMENT || actionEnCours == MODE_ECHELLE || actionEnCours == MODE_ROTATION) {
       updatePosOnLLObj(objfocus);
       mush.updatePosIconsOnFocusedData();
-      var liste = data.vPos.getData();
+      var liste = data.vPos.getDataEnfants();
       if(liste != null) for(var i = 0; i < liste.length; i++){
         if(liste[i] != null) {
           if(liste[i]._data.type == IMAGE && liste[i]._data.coupleMapLink != null) await updatePosOnLLObj(mapListLeaflet.get(liste[i]._data.coupleMapLink));
@@ -377,15 +398,15 @@ async function traitementLigneGoogleBrut(lignes){
         resolve(null);
         return null;
       }
+      data.plan = -1;
+      if(isFloatable(lignes[COL_PLAN])) data.plan = convertToFloat(lignes[COL_PLAN]);
       if(data.type == TILEMAP_DEFAULT) {
         resolve(data);
         return data;
       }
-      data.plan = -1;
-      if(isFloatable(lignes[COL_PLAN])) data.plan = convertToFloat(lignes[COL_PLAN]);
       if(data.type == MARKER || data.type == IMAGE || data.type == TEXTE) {
         data.vPos = new V2F(convertToFloat(lignes[COL_X]), convertToFloat(lignes[COL_Y]));
-        data.vTaille = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
+        data.vTaille = new V2F(convertToFloat(lignes[COL_LX]), convertToFloat(0));
         data.titre = lignes[COL_TITLE];
         if(lignes[COL_PARENT] != "-") data.txtOrigine = lignes[COL_PARENT];//generer dependances
         var angle = null;
@@ -394,9 +415,9 @@ async function traitementLigneGoogleBrut(lignes){
         else data.vPos.setTransfoAngle(0);//angle degré en normale
       }
       if(data.type == IMAGE || data.type == TEXTE) {
-        const p = data.vPos;
         if(data.type == TEXTE) data.vTaille.y = lignes[COL_LX] / lignes[COL_TITLE].length * 2;//calcul automatique de rapport
         if(data.type == IMAGE) data.vTaille.y = data.vTaille.x;
+        const p = data.vPos;
         const l = data.vTaille;
         const p1 = new V2F(-l.x/2, -l.y/2);     p1.po = p;      data.vPos1 = p1;
         const p2 = new V2F(+l.x/2, -l.y/2);     p2.po = p;      data.vPos2 = p2;
@@ -418,148 +439,6 @@ async function traitementLigneGoogleBrut(lignes){
   catch (error) {
     console.error("Erreur dans le chargement de marqueur:", error);
     return null;
-  }
-}
-/**Lecture tableau google et retour de data sans objet initialisé*/
-async function traitementLigneGoogleA(lignes){
-  try{
-    //rotation: execute en tant que coin BG par defaut
-    return await new Promise((resolve) => {
-      var data = createDataObjet(textToType(lignes[COL_TYPE]));
-      if(data == null) {
-        resolve(null);
-        return null;
-      }
-      data.plan = -1;
-      if(isFloatable(lignes[COL_PLAN])) data.plan = convertToFloat(lignes[COL_PLAN]);
-      switch(data.type){
-        case TILEMAP_DEFAULT:
-          (() => {
-            resolve(data);
-            return;
-          })();
-          break;
-        case MARKER:
-          (() => {
-            try{
-              data.vPos = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
-              var angle = null;
-              if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
-              if(angle != null) data.vPos.setTransfoAngle(angle);//angle degré en normale
-              else data.vPos.setTransfoAngle(0);
-              data.url = lignes[COL_URL];
-              data.lod = lignes[COL_LOD];
-              data.titre = lignes[COL_TITLE];
-              if(lignes[COL_PARENT] != "-") data.txtOrigine = lignes[COL_PARENT];//generer dependances
-              const imagePtee = new Image();
-              imagePtee.crossOrigin = "anonymous";
-              imagePtee.src = lignes[COL_URL];
-              //calcul automatique de rapport
-              const l = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
-              imagePtee.onload = () => {//image chargee avec succes";
-                l.y = imagePtee.height / imagePtee.width * l.x;
-                data.vTaille = l;
-                resolve(data);
-                return;
-              }
-              imagePtee.onerror = () => {//image non chargée pour la carte ";
-                data.url = unfound_img;
-                l.y = l.x;
-                data.vTaille = l;
-                resolve(data);
-                return;
-              };
-            }
-            catch (error) {
-            console.log("detection erreur " + lignes[COL_URL]);
-            data.url = unfound_img;
-            resolve(data);
-            throw error;
-            }
-          })();
-          break;
-        case IMAGE:
-            (() => {
-              var angle = null;
-              if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
-              data.vPos = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
-              if(angle != null) data.vPos.setTransfoAngle(angle);
-              else data.vPos.setTransfoAngle(0);
-              data.url = lignes[COL_URL];
-              data.titre = lignes[COL_TITLE];
-              data.auteur = lignes[COL_AUTHOR];
-              data.site = lignes[COL_SITE];
-              data.mipmapActif = false;
-              data.vTaille = new V2F(convertToFloat(lignes[COL_LX]),convertToFloat(0));
-              if(lignes[COL_PARENT] != "-") data.txtOrigine = lignes[COL_PARENT];//generer dependances
-              //
-              const imagePtee = new Image();
-              imagePtee.src = data.url;
-              //calcul automatique de rapport
-              imagePtee.onload = () => {
-                data.vImgTaille = new V2F(imagePtee.width,imagePtee.height);
-                const l = data.vTaille;
-                l.y = data.vImgTaille.y / data.vImgTaille.x * l.x;
-                data.vTaille = l;
-                const p1 = new V2F(-l.x/2, -l.y/2);     p1.po = data.vPos;  data.vPos1 = p1;
-                const p2 = new V2F(+l.x/2, -l.y/2);     p2.po = data.vPos;  data.vPos2 = p2;
-                const p3 = new V2F(+l.x/2, +l.y/2);     p3.po = data.vPos;  data.vPos3 = p3;
-                const p4 = new V2F(-l.x/2, +l.y/2);     p4.po = data.vPos;  data.vPos4 = p4;
-                resolve(data);
-                return;
-              }
-              imagePtee.onerror = () => {
-                console.log("image non chargée pour la carte " +  data.titre);
-                data.url = unfound_img;
-                data.vImgTaille = new V2F(100,100);
-                const l = data.vTaille;
-                l.y = data.vImgTaille.y / data.vImgTaille.x * l.x;
-                data.vTaille = l;
-                const p1 = new V2F(-l.x/2, -l.y/2);     p1.po = data.vPos;  data.vPos1 = p1;
-                const p2 = new V2F(+l.x/2, -l.y/2);     p2.po = data.vPos;  data.vPos2 = p2;
-                const p3 = new V2F(+l.x/2, +l.y/2);     p3.po = data.vPos;  data.vPos3 = p3;
-                const p4 = new V2F(-l.x/2, +l.y/2);     p4.po = data.vPos;  data.vPos4 = p4;
-                //
-                resolve(data);
-                return;
-              };//si l'image n'est pas valide
-            })();
-            return;
-        case TEXTE:
-            (() => {
-              //Convertir le texte en image
-              var textImageUrl = textToImage(lignes[COL_TITLE], 40 * lignes[COL_TITLE].length / 2, 40, data.color);//pas ici
-              const p = new V2F(convertToFloat(lignes[COL_X]),convertToFloat(lignes[COL_Y]));
-              const l = new V2F(lignes[COL_LX], 0);
-              var angle = null;
-              if(isFloatable(lignes[COL_ANGLE])) angle = convertToFloat(lignes[COL_ANGLE]);
-              if(angle != null) data.vPos.setTransfoAngle(angle);
-              else data.vPos.setTransfoAngle(0);
-              if(lignes[COL_PARENT] != "-") data.txtOrigine = lignes[COL_PARENT];
-              data.vPos = p;
-              data.url = textImageUrl;
-              data.titre = lignes[COL_TITLE];
-              //calcul automatique de rapport
-              l.y = lignes[COL_LX] / lignes[COL_TITLE].length * 2;
-              data.vTaille = l;
-              const p1 = new V2F(-l.x/2, -l.y/2);     p1.po = data.vPos;      data.vPos1 = p1;
-              const p2 = new V2F(+l.x/2, -l.y/2);     p2.po = data.vPos;      data.vPos2 = p2;
-              const p3 = new V2F(+l.x/2, +l.y/2);     p3.po = data.vPos;      data.vPos3 = p3;
-              const p4 = new V2F(-l.x/2, +l.y/2);     p4.po = data.vPos;      data.vPos4 = p4;
-              //
-              resolve(data);
-              return;
-            })();
-            return;
-        default:
-          resolve(null);
-          return;
-      }
-    });
-  }
-  catch (error) {
-      console.error("Erreur dans le chargement de marqueur:", error);
-      return null;
   }
 }
 /**met a jour la taille de la data en question à l'aide de la fonction javascript image (fonction lente)*/
@@ -586,7 +465,7 @@ async function traitementLigneGoogleC(data) {
             return;
           }
           imagePtee.onerror = () => {
-            console.log("image non chargée pour la carte " + data.titre);
+            console.log("[Size update warn] image de carte " + /*data.titre +*/ " non chargée: redimensionnement impossible");
             data.url = unfound_img;
             data.vImgTaille = new V2F(100,100);
             const l = data.vTaille;
@@ -602,7 +481,7 @@ async function traitementLigneGoogleC(data) {
         })();
       }
       //MARKER
-      if(data.type === MARKER) {
+      else if(data.type === MARKER) {
         (() => {
           const imagePtee = new Image();
           imagePtee.crossOrigin = "anonymous";
@@ -619,14 +498,14 @@ async function traitementLigneGoogleC(data) {
             data.url = unfound_img;
             l.y = l.x;
             data.vTaille = l;
-            console.log("marker non chargé");
+            console.log("[Size update warn] marker " + /*data.titre +*/ " non chargé: redimensionnement impossible");
             resolve(data);
             return;
           };
         })();
       }
-      // === TEXTE ===
-      if (data.type === TEXTE) {
+      //TEXTE
+      else if(data.type === TEXTE) {
         (() => {
           data.url = textToImage(data.titre,40 * data.titre.length / 2,40, data.color);
           resolve(data);
@@ -736,7 +615,6 @@ async function changeDependances(){
     await pt2.changePo(pt1);
     parentSelectTwo._data.objetVecteur._data.vPos = pt2;
     parentSelectTwo._data.objetVecteur._data.vPos2 = pt2.getPo2();
-    parentSelectTwo._data.vOrigine = parentSelectOne;
     updatePosOnLLObj(parentSelectTwo);
     resetParentMode();
   } catch (error) {
@@ -751,4 +629,13 @@ async function resetParentMode(){
   parentSelectOne = null;
   //console.log("resetparentmode");
   leaflet.closePopup();
+}
+/**Affiche tout les enfants d'une data sous forme d'arborescence texte dans la console*/
+async function traceEnfantsOnConsole(data){
+  var vPosBase = data.vPos;
+  var txt = "---\n";
+  txt += vPosBase.getData()._data.titre + "\n";
+  txt += vPosBase.getDataEnfantsArboToTxt("","") + "\n";
+  txt += "---\n";
+  console.log(txt);
 }
