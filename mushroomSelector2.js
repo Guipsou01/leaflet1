@@ -43,7 +43,7 @@ class MushroomSelector {
   //
   async mouseMove(){
     try{
-      if(this.#actionEnCours == MODE_DEPLACEMENT || this.#actionEnCours == MODE_ECHELLE || this.#actionEnCours == MODE_ROTATION) dynamicTransform(this.#objFocus._data, this.#objFocus, this.#actionEnCours);
+      if(this.#actionEnCours == MODE_DEPLACEMENT || this.#actionEnCours == MODE_ECHELLE || this.#actionEnCours == MODE_ROTATION) if(this.#objFocus != null) dynamicTransform(this.#objFocus._data, this.#objFocus, this.#actionEnCours);
     } catch (error) {console.error("Error:", error);}
   }
   //
@@ -51,11 +51,11 @@ class MushroomSelector {
     try{
       if(this.#objFocus != null){
         if((mode == MODE_DEPLACEMENT || mode == MODE_ECHELLE || mode == MODE_ROTATION || mode == MODE_LINK) && await this.#curseurSurObjSelect()) {
+          this.#actionEnCours = mode;
+          mainTxt(modetotxt(this.#actionEnCours));
           leaflet.removeCalque(this.#calqueMush);
           leaflet.addCalque(this.#calqueMushGolden);
           leaflet.disableDragging();
-          this.#actionEnCours = mode;
-          mainTxt(modetotxt(this.#actionEnCours));
         }
       }
     } catch (error) {console.error("Error:", error);}
@@ -73,7 +73,7 @@ class MushroomSelector {
   //
   async updatePosIconsOnFocusedData(){
     try{
-      if(this.#objFocus == null) throw new Error("data non select " + this.#objFocus);
+      if(this.#objFocus == null) throw new Error("data non select: " + this.#objFocus);
       (this.#calqueMush.getLayers()[0]).setLatLng(toLLCoords(this.#objFocus._data.vPos1));
       (this.#calqueMush.getLayers()[1]).setLatLng(toLLCoords(this.#objFocus._data.vPos2));
       (this.#calqueMush.getLayers()[2]).setLatLng(toLLCoords(this.#objFocus._data.vPos3));
