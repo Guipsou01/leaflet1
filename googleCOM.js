@@ -87,6 +87,7 @@ class GestionGoogle{
                 s[COL_Y] = data.vPos.y.toFixed(4);
                 s[COL_LX] = convertToFloat(data.vTaille.x).toFixed(3);
                 if(data.txtOrigine == null || data.txtOrigine == "null") s[COL_PARENT] = "-";
+                else if(data.vPos.getPo3() != null) s[COL_PARENT] = data.vPos.getPo().getData()._data.titre;
                 else s[COL_PARENT] = data.txtOrigine;
                 s[COL_TITLE] = data.titre;
                 if(data.vPos.getTransfo() != null) s[COL_ANGLE] = data.vPos.getTransfo().getAngle().toFixed(2);
