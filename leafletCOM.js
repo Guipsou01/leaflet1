@@ -6,6 +6,7 @@ class LeafletMapBase {
     #disablePopups = false;
     clickOnLLObject = false;
     grilleActive = false;
+    gestionMipmapViaChangementURL = false;
     #calqueGrille = null;
     constructor() {
       this.#llMap = L.map('map', {preferCanvas: true}).setView([0, 0], 13).setZoom(this.llZoomlvl);
@@ -151,7 +152,7 @@ class LeafletMapBase {
       try{
         var retour = false;
         //retour = true si taille de l'objet < tailleMaxi
-        if(obj._data.type == IMAGE) retour = ((((this.getMapBounds()).getNorthEast().lng - (this.getMapBounds()).getSouthWest().lng)) < (obj._data.vTaille.x > obj._data.vTaille.y ? obj._data.vTaille.x : obj._data.vTaille.y));
+        if(obj._data.type == IMAGE) retour = ((((this.getMapBounds()).getNorthEast().lng - (this.getMapBounds()).getSouthWest().lng)) < (obj._data.vTaille.x > obj._data.vTaille.y ? obj._data.vTaille.x : obj._data.vTaille.y) * 1.5);
         return retour;
       } catch(error) {new Error("Erreur " + error)};
     }
@@ -237,6 +238,7 @@ async function generateObject(data){
         ,null]
         break; case IMAGE:
             data.urlmm = await resizeImage(data.url, new V2F(10, 10), data);
+            //data.url = await toLocalUrl(data.url);
           if(data.vPos.getTransfo() == null){//image sans angle
             //[[y1, x1], [y2, x2]] : p1y,p1x,p3y,p3x
             var imageBounds3 = [toLLTabl(data.vPos1), toLLTabl(data.vPos3)];
