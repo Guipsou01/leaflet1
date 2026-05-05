@@ -1,4 +1,4 @@
-const LONG_PRESS_THRESHOLD = 100; // Durée en ms pour définir un appui long
+const LONG_PRESS_THRESHOLD = 200; // Durée en ms pour définir un appui long
 var isHolding = false;
 var holdIntervalLL;
 var isHandlingClickOrHold = false; //Empêche la double détection
