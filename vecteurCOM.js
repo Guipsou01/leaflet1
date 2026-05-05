@@ -270,7 +270,7 @@ class V2F{
             }
         }
         if(liste.length == 0){
-            console.log("liste vide");
+            //console.log("liste vide");
             return null;
         }
         else return liste;
@@ -332,5 +332,9 @@ class V2F{
         this.setXY(nouvelleDistanceX,nouvelleDistanceY);
         this.setTransfoAngle(differenceAngleFinal);
         this.applyRotationDecalage(- pt1.ptAbs().getAngle());
+    }
+    /**retourne la distance du vecteur (pyt), ne calcule que localement*/
+    getDist(){
+        return Math.sqrt(this.x ** 2 + this.y ** 2);
     }
 }
