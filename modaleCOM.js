@@ -1,21 +1,20 @@
 
 class FenetreModale {
     #popupContent = null;
-    #croixCredits = null;
-    #fenetreCredits = null;
+    #croixModale = null;
+    #fenetreModale = null;
     #isActif = false;
-    constructor(modaleContent, croixCredits, fenetreCreditsID){
+    constructor(modaleContent, croixModale, fenetreModaleID){
         try{
             if(!modaleContent) throw new Error("modaleContent non initialisé");
-            if(!croixCredits) throw new Error("croixCredits non initialisé");
-            if(!fenetreCreditsID) throw new Error("fenetreCreditsID non initialisé");
+            if(!fenetreModaleID) throw new Error("fenetreModaleID non initialisé");
             this.#popupContent = modaleContent;
-            this.#croixCredits = croixCredits;
-            this.#fenetreCredits = fenetreCreditsID;
+            this.#croixModale = croixModale;
+            this.#fenetreModale = fenetreModaleID;
             /**appui sur la croix de la fenetre modale */
-            this.#croixCredits.onclick = () => {this.close();}
+            if(croixModale) this.#croixModale.onclick = () => {this.close();}
             /**appui sur la fenetre */
-            window.onclick = (event) => {if(event.target === this.#fenetreCredits) this.close();}
+            window.onclick = (event) => {if(event.target === this.#fenetreModale) this.close();}
         }
         catch (error) {console.error("Error:", error);}
     }
@@ -25,11 +24,11 @@ class FenetreModale {
         this.open();
     }
     open(){
-        this.#fenetreCredits.style.display = "block";
+        this.#fenetreModale.style.display = "flex";
         disableAllbuttons();
     }
     close(){
-        this.#fenetreCredits.style.display = "none";
+        this.#fenetreModale.style.display = "none";
         activeAllButtons();
     }
 }
