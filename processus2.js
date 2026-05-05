@@ -17,6 +17,7 @@ const lodActif = true;
 /**structure globale du code */
 async function corps(){
   try{
+    leaflet.gestionMipmapViaChangementURL = true;
     disableAllbuttons();
     //FICHIER REGROUPANT LES FONCTIONS GENERALES AU PROGRAMME
     google.setSpreadsheetId(ssId);
@@ -85,6 +86,7 @@ async function resetAllMapContent(){
         if(data != null){
           var obj = await generateObject(data);
           obj._data.vPos.setData(obj);
+          obj._data.mipmapActif = true;
           if(obj == null) throw new Error("data nulle");
           if(obj == undefined) throw new Error("data undefined");
           obj._data.objetCarre1 = await generateObject(createDataObjet(POLYLIGNE)); obj._data.objetCarre1._data.titre = obj._data.titre + "[VC1]";  //obj._data.objetCarre1.addTo(calqueVecteurs);
@@ -169,14 +171,14 @@ async function mapMoveEnd(){
   const promises = [];
   calqueObj.eachLayer(obj => {
     if(!obj) return;
-    if(obj._data.type == MARKER) promises.push(updatePosOnLLObj(obj));
+    if(obj._data.type == MARKER || obj._data.type == IMAGE) promises.push(updatePosOnLLObj(obj));
   });
   await Promise.all(promises);
   if(await mush.hasObjFocus()) mush.updatePosIconsOnFocusedData();
   updateLog();
 }
-//
-function findLocation(txt){//trouve le lieu dans la map correspondant au texte demandé, et active son popup
+/**trouve le lieu dans la map correspondant au texte demandé, et active son popup*/
+function findLocation(txt){
   console.log(txt);
   var obj = findObjWithTitreValide(txt);
   if(obj != undefined) {
