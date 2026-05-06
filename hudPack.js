@@ -7,7 +7,6 @@ var actionEnCours = null;
 const btnEditor = new hudButton1(document.getElementById("btnEditor"), document.getElementById("btnEditorContent"));
 const btnVecteur = new hudButton1(document.getElementById("btnVecteur"), document.getElementById("btnVecteurContent"));
 const btnListMaps = new hudList(document.getElementById('btnMaps'), document.getElementById('btnMapsList'), false);
-const btnListLocations = new hudList(document.getElementById('btnLocations'), document.getElementById('btnLocationsList'), true);
 const fenetreModale = new FenetreModale(document.getElementById('fenetreCredits-content'), document.getElementsByClassName("croixCreditsId")[0], document.getElementById("fenetreCreditsId"));
 var contentCredits =  `<p><h3>Sources</h3>
 <b>Code source:</b><br>
@@ -28,16 +27,16 @@ var contentSave = `<h3 style="text-align: center;">Attention</h3>
 <p style="text-align: center;">Sauvegarder la page crééra ou écrasera un onglet 'OUTPUT' sur la fiche Google Sheets.<br></p>
 <p style="text-align: center;"><a href="#" style="cursor: pointer; text-decoration: underline;" onclick="sauvegarder()">Sauvegarder</a></p><br>`;
 //
-const input = document.getElementById("champRecherche");
+const champRecherche = document.getElementById("champRecherche");
 
-input.addEventListener("input", () => {});//actu a chaque action sur btn recherche
+champRecherche.addEventListener("champRecherche", () => {});//actu a chaque action sur btn recherche
 
 //actu quand appui sur entree sur btn recherche
-input.addEventListener("keydown", (e) => {
+champRecherche.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         e.preventDefault();
-        findLocation(input.value);
-        input.blur(); //enlève le focus
+        findLocation(champRecherche.value);
+        champRecherche.blur(); //enlève le focus
     }
 });
 /**Initialisation sélecteur de maps et remplissage de la liste des maps*/
@@ -83,19 +82,19 @@ const cliqueSurSlotListe2 = (option, id, item) => {
 async function disableAllbuttons(){
   btnSave.disabled = true;
   btnCredits.disabled = true;
+  champRecherche.disabled = true;
   btnEditor.disable();
   btnVecteur.disable();
   btnListMaps.disable();
-  btnListLocations.disable();
 }
 //
 async function activeAllButtons(){
   btnSave.disabled = false;
   btnCredits.disabled = false;
+  champRecherche.disabled = false;
   btnEditor.active();
   btnVecteur.active();
   btnListMaps.active();
-  //btnListLocations.active();
 }
 /**appui sur le bouton credits */
 btnCredits.onclick = function() {
@@ -122,11 +121,6 @@ function mouseMoveDetectedHud(){
 function initHudPack(){
     btnVecteur.setText("Parent (off)");
     btnVecteur.setFunctionOnClick(cliqueSurBtnVecteur);
-    btnListLocations.setText("Locations List");
-    btnListLocations.setFunctionOnClickBtn(clickSurBtnLocations);
-    btnListLocations.setFunctionOnClickListe(cliqueSurSlotListe1);
-    btnListLocations.setFunctionOnClickExtFenetreWhenAffichee(cliqueOnExtFenetreToCloseHVL);
-    btnListLocations.setFunctionOnRenderForEachSlot(renderForEachSlotLoc);
     btnListMaps.setFunctionOnClickListe(cliqueSurSlotListe2);
     btnListMaps.setText("Loading...");
     btnEditor.setText("Editor (off)");
@@ -134,12 +128,16 @@ function initHudPack(){
     texteCharg = document.getElementById('texteInfo');
     logCharg = document.getElementById('log');
     texteCharg.innerHTML = "Startup";
-    logCharg.innerHTML = "*";
+    logCharg.innerHTML = "";
 }
 /**change le titre*/
 async function mainTxt(txt){
   texteCharg.innerHTML = txt;
   await refreshEcran();
+}
+async function changePosMainTxt(x){
+  texteCharg.style.position = "absolute";
+  texteCharg.style.top = (x + "px");
 }
 const cliqueSurSlotListe1 = (liste, id, item) => {
   /*//item.disabled = true;
