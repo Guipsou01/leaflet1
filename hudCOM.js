@@ -90,7 +90,7 @@ class hudList {
   }
   /**applique une liste au format tableau classique, si compote plusieurs colonnes (tableau 2d), choisis la colonne correspondante a afficher, 0 si une seule colonne*/
   setListe(liste, col){
-    if(!Array.isArray(liste)) throw new Error("Erreur : 'liste' doit être un tableau.");
+    if(!Array.isArray(liste)) throw new Error("Erreur : 'liste' doit être un tableau type array.");
     this.#colonneAAfficher = col;
     this.#listetotale = liste;
     if(this.#listContent) this.#listContent.remove();
