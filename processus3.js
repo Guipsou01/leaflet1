@@ -9,6 +9,8 @@ const calqueVecteurs = leaflet.generateCalque(false);
 const calqueTileMap = leaflet.generateCalque(false);
 const calqueDetails = leaflet.generateCalque(true);
 const calqueObjToujoursActif = leaflet.generateCalque(true);
+const calqueObj = leaflet.generateCalque(false);
+leaflet.removeCalque(calqueObj);
 const toutcalques = L.layerGroup([calqueObjToujoursActif, calqueDetails]);
 //
 /**structure globale du code */
@@ -16,6 +18,7 @@ async function corps(){
   try{
     leaflet.gestionMipmapViaChangementURL = true;
     disableAllbuttons();
+    leaflet.addCalque(toutcalques);
     //FICHIER REGROUPANT LES FONCTIONS GENERALES AU PROGRAMME
     google.setSpreadsheetId(ssId);
     google.setApiKey(apik);
@@ -38,9 +41,11 @@ async function resetAllMapContent(){
     await disableAllbuttons();
     mode = MODE_LECTURE;
     //leaflet.clear();
+    calqueObj.clearLayers();
+    calqueObjToujoursActif.clearLayers();
     calqueVecteurs.clearLayers();
+    calqueDetails.clearLayers();
     calqueTileMap.clearLayers();
-    leaflet.addCalque(toutcalques);
     btnEditor.setText("Editor (off)");
     //récupération des données de la feuille google visée
     if(await google.getNomFeuillesSansRequette() == null){await mainTxt("No Google Table found, check table id and permission");  return;}
@@ -70,6 +75,7 @@ async function resetAllMapContent(){
     }
     btnVecteur.active();
     await mainTxt("Google lists content filling: object generation...");
+    var cpt = 0;
     await Promise.all(dataPack.map(async data => {
       if(data != null) if(data.type != TILEMAP_DEFAULT) {
         data = await traitementLigneGoogleC(data);
@@ -98,19 +104,23 @@ async function resetAllMapContent(){
           }
           //fin masquage
         }
+        obj.addTo(calqueObj);
       }
       else if(data.type == TILEMAP_DEFAULT){
         var obj = await generateObject(data);
         obj._data = data;
         obj.addTo(calqueTileMap);
       }
+      cpt++;
+      //changePosMainTxt(50);
+      if(cpt % 20 === 0) mainTxt(`Google lists content filling: object generation... ${Math.round((cpt * 100) / dataPack.length)} %`);
       return data;
     }));
     await mainTxt("Google lists content filling: end...");
     //leaflet.removeCalque(calqueVecteurs);
     //console.log("trace leaflet:");
-    //
-    updateLog();
+    console.log(calqueObj);
+    //updateLog();
     await activeAllButtons();
     await mainTxt("");
   } catch (error) {console.error("Error:", error);}
@@ -163,7 +173,7 @@ async function mapMoveEnd(){
   }
 
   if(await mush.hasObjFocus()) mush.updatePosIconsOnFocusedData();
-  updateLog();
+  //updateLog();
 }
 /**trouve le lieu dans la map correspondant au texte demandé, et active son popup*/
 function findLocation(txt){
@@ -274,7 +284,7 @@ async function updateLayers(){
 /**retourne un string contenant la map en parametre en formatage google sheets*/
 async function generateList(){
     var text = `<p style="font-size: 4px;"><table><tbody>-<br>`;
-    toutcalques.eachLayer(layer => {text += google.generateLigneFromData(layer._data);});
+    calqueObj.eachLayer(layer => {text += google.generateLigneFromData(layer._data);});
     text += "</tbody></table><br>-</p>";
     return text;
 }
