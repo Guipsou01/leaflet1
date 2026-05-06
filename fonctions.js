@@ -56,7 +56,6 @@ function createDataObjet(type){
     vPos: new V2F(0,0),
     vAngle: null,
     titre: null,
-    objmm: null,
     url: null,
     urlmm: null,
     vPos1: new V2F(0,0),
@@ -325,7 +324,6 @@ function mouseDown(){
   firstAction = true;
   mush.mouseDown();
   btnListMaps.fermerListe();
-  btnListLocations.fermerListe();
 }
 function mouseUp(){
   mush.mouseUp();
@@ -525,16 +523,11 @@ async function traitementLigneGoogleC(data) {
 /**met a jour les positions de l'objet dans leaflet de la ligne correspondante (mettre la ligne complète en parametre, après modifications de positions), n'affecte pas les icones du ms*/
 async function updatePosOnLLObj(obj){
     if(obj == null || obj == undefined) throw new Error("obj nulle ou undefined");
-    var obj2 = obj._data.objmm;
     var data = obj._data;
     try{
     if(data.type == IMAGE || data.type == TEXTE){
       if(data.vPos.getTransfo() == null) await obj.setBounds([[data.vPos1.yAbs(), data.vPos1.xAbs()], [data.vPos3.yAbs(), data.vPos3.xAbs()]]);//image select
       else await obj.reposition(toLLCoords(data.vPos4),toLLCoords(data.vPos3),toLLCoords(data.vPos1));
-      if(data.type == IMAGE && obj2 != null){//gestion de la mipmap
-        if(data.vPos.getTransfo() == null) await obj2.setBounds([[data.vPos1.yAbs(), data.vPos1.xAbs()], [data.vPos3.yAbs(), data.vPos3.xAbs()]]);//image select
-        else await obj2.reposition(toLLCoords(data.vPos4),toLLCoords(data.vPos3),toLLCoords(data.vPos1));
-      }
     }
     else if(data.type == POLYLIGNE) await obj.setLatLngs([toLLTabl(data.vPos),toLLTabl(data.vPos2)]);
     else if(data.type == MARKER) {
