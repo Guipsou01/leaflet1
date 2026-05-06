@@ -247,12 +247,8 @@ async function generateObject(data){
               interactive: true,
               zIndex: data.plan,
               pane: 'objets'}), 
-              L.imageOverlay(data.urlmm, imageBounds3, {//url
-              interactive: true,
-              zIndex: data.plan,
-              pane: 'objets'})
+              null
             ];
-            data.objmm = objFin[1];
           }
           else{//image avec angle
             //point2,point1,point4: p4y, p4x, p3y, p3x, p1y, p1x
@@ -262,13 +258,8 @@ async function generateObject(data){
               interactive: true,
               zIndex: data.plan,
               pane: 'objets'}),
-              L.imageOverlay.rotated(data.urlmm, toLLCoords(data.vPos4), toLLCoords(data.vPos3), toLLCoords(data.vPos1), { 
-              opacity: 1,
-              interactive: true,
-              zIndex: data.plan,
-              pane: 'objets'})
+              null
             ];
-            data.objmm = objFin[1];
           }
         break; case MARKER:
           //data.urlmm = await resizeImage(data.url, new V2F(40, 40), data);
@@ -278,6 +269,7 @@ async function generateObject(data){
             iconSize:     [data.vTaille.x, data.vTaille.y], // size of the icon, 38;95 pour la feuille
             iconAnchor:   [data.vTaille.x /2, data.vTaille.y /2], // point of the icon which will correspond to marker's location, 22;94 pour la feuille
             popupAnchor:  [0, -data.vTaille.x / 2], // point from which the popup should open relative to the iconAnchor, -3;-76 pour la feuille
+            className: "markerclassique",
           });
           objFin = [L.marker(toLLTabl(data.vPos), {
             icon: greenIcon,
